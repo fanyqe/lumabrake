@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LumaBrake.Analysis\LumaBrake.Analysis.csproj" />
+    <ProjectReference Include="..\LumaBrake.Capture\LumaBrake.Capture.csproj" />
+    <ProjectReference Include="..\LumaBrake.Effects\LumaBrake.Effects.csproj" />
+    <ProjectReference Include="..\LumaBrake.Rendering\LumaBrake.Rendering.csproj" />
+    <ProjectReference Include="..\LumaBrake.Diagnostics\LumaBrake.Diagnostics.csproj" />
+    <ProjectReference Include="..\LumaBrake.Persistence\LumaBrake.Persistence.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

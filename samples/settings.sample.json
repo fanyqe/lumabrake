@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "userMaximumOpacity": 0.64,
+  "spikeGuard": {
+    "warmupSamples": 8,
+    "baselineWindowSamples": 20,
+    "minimumActivationLuminance": 0.28,
+    "absoluteIncreaseThreshold": 0.18,
+    "relativeIncreaseThreshold": 1.85,
+    "brightPixelRatioThreshold": 0.18,
+    "cooldown": "00:00:00.9000000",
+    "maximumOpacity": 0.58,
+    "hold": "00:00:00.2200000",
+    "release": "00:00:00.9000000"
+  }
+}

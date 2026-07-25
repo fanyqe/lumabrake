@@ -1,0 +1,117 @@
+using System.Runtime.InteropServices;
+using LumaBrake.Domain.Frames;
+using LumaBrake.Platform.Windows;
+
+namespace LumaBrake.Capture;
+
+public sealed class GdiPrimaryMonitorCapture : IFrameCapture
+{
+    private readonly int _analysisWidth;
+    private readonly int _analysisHeight;
+    private bool _disposed;
+
+    public GdiPrimaryMonitorCapture(int analysisWidth = 160, int analysisHeight = 90)
+    {
+        _analysisWidth = analysisWidth;
+        _analysisHeight = analysisHeight;
+    }
+
+    public CapturedFrame Capture()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var bounds = PrimaryMonitor.Bounds();
+        var screenDc = NativeMethods.GetDC(IntPtr.Zero);
+        if (screenDc == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Screen device context could not be acquired.");
+        }
+
+        var memoryDc = IntPtr.Zero;
+        var bitmap = IntPtr.Zero;
+        var oldObject = IntPtr.Zero;
+
+        try
+        {
+            memoryDc = NativeMethods.CreateCompatibleDC(screenDc);
+            if (memoryDc == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Memory device context could not be created.");
+            }
+
+            var bitmapInfo = new BitmapInfo
+            {
+                Header = new BitmapInfoHeader
+                {
+                    Size = (uint)Marshal.SizeOf<BitmapInfoHeader>(),
+                    Width = _analysisWidth,
+                    Height = -_analysisHeight,
+                    Planes = 1,
+                    BitCount = 32,
+                    Compression = NativeMethods.BiRgb,
+                    SizeImage = (uint)(_analysisWidth * _analysisHeight * 4)
+                }
+            };
+
+            bitmap = NativeMethods.CreateDIBSection(
+                memoryDc,
+                ref bitmapInfo,
+                NativeMethods.DibRgbColors,
+                out var bits,
+                IntPtr.Zero,
+                0);
+
+            if (bitmap == IntPtr.Zero || bits == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Capture bitmap could not be created.");
+            }
+
+            oldObject = NativeMethods.SelectObject(memoryDc, bitmap);
+            var copied = NativeMethods.StretchBlt(
+                memoryDc,
+                0,
+                0,
+                _analysisWidth,
+                _analysisHeight,
+                screenDc,
+                (int)bounds.X,
+                (int)bounds.Y,
+                (int)bounds.Width,
+                (int)bounds.Height,
+                NativeMethods.SrcCopy);
+
+            if (!copied)
+            {
+                throw new InvalidOperationException("Screen frame could not be copied.");
+            }
+
+            var buffer = new byte[_analysisWidth * _analysisHeight * 4];
+            Marshal.Copy(bits, buffer, 0, buffer.Length);
+
+            return new CapturedFrame(
+                buffer,
+                new FrameMetadata(DateTimeOffset.UtcNow, _analysisWidth, _analysisHeight, "PrimaryMonitorGDI"));
+        }
+        finally
+        {
+            if (oldObject != IntPtr.Zero)
+            {
+                NativeMethods.SelectObject(memoryDc, oldObject);
+            }
+
+            if (bitmap != IntPtr.Zero)
+            {
+                NativeMethods.DeleteObject(bitmap);
+            }
+
+            if (memoryDc != IntPtr.Zero)
+            {
+                NativeMethods.DeleteDC(memoryDc);
+            }
+
+            NativeMethods.ReleaseDC(IntPtr.Zero, screenDc);
+        }
+    }
+
+    public void Dispose() => _disposed = true;
+}
