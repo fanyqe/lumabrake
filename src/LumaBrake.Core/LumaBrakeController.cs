@@ -52,7 +52,7 @@ public sealed class LumaBrakeController : IDisposable
         Settings = Settings with { Enabled = !Settings.Enabled };
         if (!Settings.Enabled)
         {
-            EmergencyDisable();
+            ClearActiveEffects(resetManualDimming: false);
         }
     }
 
@@ -61,7 +61,7 @@ public sealed class LumaBrakeController : IDisposable
         Settings = Settings with { Enabled = enabled };
         if (!enabled)
         {
-            EmergencyDisable();
+            ClearActiveEffects(resetManualDimming: false);
         }
     }
 
@@ -70,10 +70,26 @@ public sealed class LumaBrakeController : IDisposable
         Settings = Settings with { UserMaximumOpacity = Math.Clamp(maximumOpacity, 0.05, 0.92) };
     }
 
+    public void SetManualDimmingOpacity(double opacity)
+    {
+        Settings = Settings with { ManualDimmingOpacity = Math.Clamp(opacity, 0, 0.90) };
+        PublishSnapshot();
+    }
+
     public void EmergencyDisable()
+    {
+        ClearActiveEffects(resetManualDimming: true);
+    }
+
+    private void ClearActiveEffects(bool resetManualDimming)
     {
         lock (_gate)
         {
+            if (resetManualDimming)
+            {
+                Settings = Settings with { ManualDimmingOpacity = 0 };
+            }
+
             foreach (var pipeline in _pipelines.Values)
             {
                 pipeline.Envelope.Clear();
@@ -269,7 +285,19 @@ public sealed class LumaBrakeController : IDisposable
                         Settings.FlashGuard.Release));
                 }
 
-                var final = _composer.Compose(current.Envelope.ActiveAt(DateTimeOffset.UtcNow), Settings.UserMaximumOpacity);
+                var now = DateTimeOffset.UtcNow;
+                var activeRequests = current.Envelope.ActiveAt(now).ToList();
+                if (Settings.ManualDimmingOpacity > 0)
+                {
+                    activeRequests.Add(new EffectRequest(
+                        EffectReason.Manual,
+                        Settings.ManualDimmingOpacity,
+                        now,
+                        TimeSpan.FromMilliseconds(100),
+                        TimeSpan.Zero));
+                }
+
+                var final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity);
                 current.LastOpacity = final.GlobalOpacity;
                 current.LastReason = final.GlobalReason;
                 opacity = final.GlobalOpacity;

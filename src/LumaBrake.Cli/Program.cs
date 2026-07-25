@@ -15,6 +15,7 @@ switch (command)
     case "status":
         Console.WriteLine(settings.Enabled ? "LumaBrake settings: enabled" : "LumaBrake settings: disabled");
         Console.WriteLine($"Maximum software dimming: {Math.Round(settings.UserMaximumOpacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
+        Console.WriteLine($"Manual software dimming: {Math.Round(settings.ManualDimmingOpacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
         return 0;
 
     case "enable":
@@ -30,6 +31,29 @@ switch (command)
     case "safe-mode":
         store.Save(settings with { Enabled = false, UserMaximumOpacity = 0.25 });
         Console.WriteLine("Safe mode settings saved.");
+        return 0;
+
+    case "dim":
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: lumabrake dim <0-90|off>");
+            return 2;
+        }
+
+        double manualOpacity;
+        try
+        {
+            manualOpacity = ParseManualOpacity(args[1]);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            Console.Error.WriteLine("Usage: lumabrake dim <0-90|off>");
+            return 2;
+        }
+
+        store.Save(settings with { ManualDimmingOpacity = manualOpacity });
+        Console.WriteLine($"Manual software dimming: {Math.Round(manualOpacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
         return 0;
 
     case "capture-test":
@@ -98,6 +122,23 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|capture-test|monitor list|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|capture-test|monitor list|diagnostics export [output.zip]");
         return 2;
+}
+
+static double ParseManualOpacity(string value)
+{
+    if (string.Equals(value, "off", StringComparison.OrdinalIgnoreCase))
+    {
+        return 0;
+    }
+
+    var normalized = value.Trim().TrimEnd('%');
+    if (!double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+    {
+        throw new ArgumentException("Manual dimming must be a percentage from 0 to 90 or 'off'.", nameof(value));
+    }
+
+    var opacity = parsed > 1 ? parsed / 100.0 : parsed;
+    return Math.Clamp(opacity, 0, 0.90);
 }

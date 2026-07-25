@@ -78,6 +78,10 @@
                     </UniformGrid>
 
                     <StackPanel Grid.Row="4">
+                        <TextBlock Text="Manual dimming" Foreground="{StaticResource MutedBrush}" />
+                        <Slider x:Name="ManualDimmingSlider" Minimum="0" Maximum="0.90" TickFrequency="0.02" ValueChanged="ManualDimmingSlider_OnValueChanged" Margin="0,8,0,0" />
+                        <TextBlock x:Name="ManualDimmingText" Text="0%" HorizontalAlignment="Right" Foreground="{StaticResource MutedBrush}" />
+                        <Separator Margin="0,12,0,12" Background="{StaticResource RuleBrush}" />
                         <TextBlock Text="Maximum dimming" Foreground="{StaticResource MutedBrush}" />
                         <Slider x:Name="MaximumOpacitySlider" Minimum="0.10" Maximum="0.92" TickFrequency="0.02" ValueChanged="MaximumOpacitySlider_OnValueChanged" Margin="0,8,0,0" />
                         <TextBlock x:Name="MaximumOpacityText" Text="64%" HorizontalAlignment="Right" Foreground="{StaticResource MutedBrush}" />

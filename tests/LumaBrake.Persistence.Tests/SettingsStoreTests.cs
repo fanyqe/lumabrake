@@ -13,18 +13,20 @@ public sealed class SettingsStoreTests : IDisposable
 
         Assert.True(settings.Enabled);
         Assert.Equal(0.64, settings.UserMaximumOpacity, precision: 12);
+        Assert.Equal(0, settings.ManualDimmingOpacity, precision: 12);
     }
 
     [Fact]
     public void Save_And_Load_RoundTripsSettings()
     {
         var store = new SettingsStore(rootDirectory: _root);
-        store.Save(new LumaBrakeSettings { Enabled = false, UserMaximumOpacity = 0.25 });
+        store.Save(new LumaBrakeSettings { Enabled = false, UserMaximumOpacity = 0.25, ManualDimmingOpacity = 0.18 });
 
         var loaded = store.Load();
 
         Assert.False(loaded.Enabled);
         Assert.Equal(0.25, loaded.UserMaximumOpacity, precision: 12);
+        Assert.Equal(0.18, loaded.ManualDimmingOpacity, precision: 12);
     }
 
     [Fact]

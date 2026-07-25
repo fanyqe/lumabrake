@@ -18,6 +18,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         MaximumOpacitySlider.Value = _controller.Settings.UserMaximumOpacity;
+        ManualDimmingSlider.Value = _controller.Settings.ManualDimmingOpacity;
         _controller.SnapshotUpdated += ControllerOnSnapshotUpdated;
         RenderSnapshot(_controller.Snapshot());
     }
@@ -88,6 +89,17 @@ public partial class MainWindow : Window
         MaximumOpacityText.Text = FormatPercent(e.NewValue);
     }
 
+    private void ManualDimmingSlider_OnValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
+        _controller.SetManualDimmingOpacity(e.NewValue);
+        ManualDimmingText.Text = FormatPercent(e.NewValue);
+    }
+
     private void RenderSnapshot(PipelineSnapshot snapshot)
     {
         StateText.Text = snapshot.IsEnabled ? "Enabled" : "Disabled";
@@ -96,6 +108,12 @@ public partial class MainWindow : Window
         P95Text.Text = snapshot.Percentile95Luminance.ToString("0.000");
         OpacityText.Text = FormatPercent(snapshot.OverlayOpacity);
         EventsText.Text = (snapshot.SpikeEvents + snapshot.FlashEvents).ToString("N0");
+        if (Math.Abs(ManualDimmingSlider.Value - _controller.Settings.ManualDimmingOpacity) > 0.001)
+        {
+            ManualDimmingSlider.Value = _controller.Settings.ManualDimmingOpacity;
+        }
+
+        ManualDimmingText.Text = FormatPercent(_controller.Settings.ManualDimmingOpacity);
         MaximumOpacityText.Text = FormatPercent(MaximumOpacitySlider.Value);
         MonitorText.Text = snapshot.MonitorCount == 0
             ? snapshot.MonitorStatus

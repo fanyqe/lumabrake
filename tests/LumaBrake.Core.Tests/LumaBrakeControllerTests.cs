@@ -88,13 +88,44 @@ public sealed class LumaBrakeControllerTests
         using var controller = new LumaBrakeController(
             new RecordingCapture(),
             overlay,
-            new LumaBrakeSettings(),
+            new LumaBrakeSettings { ManualDimmingOpacity = 0.20 },
             new MutableMonitorCatalog(monitors));
 
         controller.EmergencyDisable();
 
         Assert.Equal(1, overlay.HideAllCalls);
+        Assert.Equal(0, controller.Settings.ManualDimmingOpacity, precision: 12);
         Assert.All(controller.Snapshot().Monitors, monitor => Assert.Equal(0, monitor.OverlayOpacity));
+    }
+
+    [Fact]
+    public async Task Start_AppliesManualDimmingToEveryDetectedMonitor()
+    {
+        var monitors = TestMonitors();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            new RecordingOverlay(),
+            new LumaBrakeSettings
+            {
+                ManualDimmingOpacity = 0.25,
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var manualDimmingApplied = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                return snapshot.Monitors.Count == monitors.Length &&
+                    snapshot.Monitors.All(monitor =>
+                        monitor.ActiveReason == EffectReason.Manual &&
+                        Math.Abs(monitor.OverlayOpacity - 0.25) < 0.001);
+            },
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(manualDimmingApplied);
     }
 
     [Fact]
