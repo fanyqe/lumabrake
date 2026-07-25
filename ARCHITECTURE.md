@@ -8,24 +8,24 @@ LumaBrake is a native Windows desktop application split into testable domain log
 - `LumaBrake.Domain`: immutable records and enums shared by the system.
 - `LumaBrake.Analysis`: sRGB linearization, luminance metrics, spike detection.
 - `LumaBrake.Effects`: centralized opacity composition and release envelopes.
-- `LumaBrake.Capture`: current Phase 2 GDI primary-monitor capture path.
-- `LumaBrake.Rendering`: click-through overlay window.
+- `LumaBrake.Capture`: current GDI per-monitor downscaled capture path.
+- `LumaBrake.Rendering`: click-through overlay windows, one per active monitor.
 - `LumaBrake.Platform.Windows`: Win32 interop for hotkeys, capture, monitor bounds, overlay styles.
 - `LumaBrake.Persistence`: local JSON settings with atomic replace.
 - `LumaBrake.Diagnostics`: pipeline snapshots for UI and future export.
 - `LumaBrake.Cli`: automation entry point for basic settings.
 
-## Phase 2 Data Flow
+## Phase 3 Data Flow
 
 ```text
-Primary monitor
+Each active monitor
   -> GDI downscaled BGRA capture (160 x 90)
   -> sRGB-to-linear luminance calculation
   -> global average / p95 / bright pixel ratio
-  -> BrightnessSpikeDetector
-  -> EffectEnvelope
+  -> per-monitor BrightnessSpikeDetector
+  -> per-monitor EffectEnvelope
   -> EffectComposer
-  -> click-through WPF overlay opacity
+  -> matching click-through WPF overlay opacity
 ```
 
 Raw frame buffers are scoped to one capture iteration and are not persisted.
@@ -50,4 +50,12 @@ Decision: Phase 3 begins with Win32 `EnumDisplayMonitors` and `GetMonitorInfo` e
 
 Reason: the product needs stable monitor identity, bounds, work area, and primary/secondary state before per-monitor capture sessions and overlays are expanded.
 
-Consequence: hot-plug event subscriptions and persistent monitor matching are still future work, but CLI and UI now use the same monitor source.
+Consequence: hot-plug event subscriptions and persistent monitor matching are still future work, but CLI, UI, capture, and rendering now use the same monitor source.
+
+## ADR-0004: Basic Per-Monitor Runtime
+
+Decision: maintain one detector/envelope/counter pipeline per active monitor and one WPF overlay window per active monitor.
+
+Reason: sudden brightness changes must be detected and rendered independently for each display before localized masks, inactive-monitor dimming, and per-monitor settings are added.
+
+Consequence: the current GDI backend still captures sequentially on one worker loop. DXGI Desktop Duplication or Windows Graphics Capture remains the target for lower latency and better scaling.

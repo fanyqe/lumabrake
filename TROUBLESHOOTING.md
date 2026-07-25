@@ -8,6 +8,7 @@ Press `Ctrl+Alt+Shift+L` or choose `Emergency disable` from the tray menu.
 
 - Confirm the app is enabled.
 - Confirm the active content actually crosses spike thresholds.
+- Run `monitor list` to confirm Windows reports every active display.
 - Protected or exclusive full-screen content may limit capture.
 
 ## Build Uses The Wrong SDK

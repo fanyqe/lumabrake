@@ -8,7 +8,7 @@ The first working slice is focused on Brightness Spike Guard:
 - raw screen samples are discarded after analysis;
 - no AI, cloud service, telemetry, OCR, or screen recording is used;
 - the app runs from a native WPF dashboard and system tray;
-- a click-through overlay applies software dimming;
+- click-through overlays apply software dimming on active Windows monitors;
 - active Windows monitors can be listed from the CLI;
 - `Ctrl+Alt+Shift+L` performs emergency disable;
 - corrupted local settings are quarantined and replaced with defaults;
@@ -21,6 +21,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Feature | Status |
 | --- | --- |
 | Brightness Spike Guard | Phase 2 vertical slice implemented |
+| Multi-monitor capture and overlays | Basic Phase 3 pipeline implemented |
 | Manual software maximum dimming | Basic setting |
 | System tray controls | Implemented |
 | Emergency hotkey | Implemented |

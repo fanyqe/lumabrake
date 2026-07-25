@@ -1,6 +1,6 @@
 # Performance Notes
 
-Phase 2 analyzes a downscaled `160 x 90` BGRA sample from the primary monitor. This keeps the detector buffer small and avoids full-resolution CPU analysis.
+Phase 3 analyzes a downscaled `160 x 90` BGRA sample per active monitor. This keeps each detector buffer small and avoids full-resolution CPU analysis while the runtime moves toward a lower-latency capture backend.
 
 Future baselines should track:
 
