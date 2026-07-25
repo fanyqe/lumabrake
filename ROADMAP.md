@@ -39,7 +39,7 @@
 ## 0.6.0 - Adaptive and Inactive Dimming
 
 - Initial smooth content dimming.
-- Inactive monitor dimming.
+- Initial non-primary inactive monitor dimming.
 - Video/activity exceptions.
 
 ## 0.7.0 - Hardware Brightness and Schedules

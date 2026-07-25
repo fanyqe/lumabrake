@@ -27,6 +27,7 @@ Each active monitor
   -> per-monitor RepetitiveFlashDetector
   -> per-monitor StaticShadeDetector
   -> per-monitor AdaptiveContentDimmingDetector
+  -> per-monitor InactiveMonitorDimmingDetector for non-primary displays
   -> per-monitor EffectEnvelope
   -> EffectComposer
   -> matching click-through WPF overlay global opacity / regional masks
@@ -103,3 +104,11 @@ Decision: emit a low-priority global `AdaptiveContent` effect only after bright 
 Reason: persistent white or bright interfaces benefit from gentle dimming, but short flashes and sudden transitions are already handled by higher-priority flash and spike guards.
 
 Consequence: Phase 8 has a first smooth bright-scene dimming path with duration, dead-zone, smoothing, and frame-gap reset. Inactive-monitor dimming, time-of-day profiles, and application-specific behavior remain future work.
+
+## ADR-0010: Initial Inactive Monitor Dimming
+
+Decision: dim only non-primary monitors when their analyzed luminance metrics stay effectively unchanged for a configured duration.
+
+Reason: unchanged-frame detection is deterministic and available in the existing local analysis loop, while cursor/foreground-window attribution needs a separate Windows activity model.
+
+Consequence: Phase 8 now has a first inactive-monitor response that restores when frame metrics change. Cursor entry, foreground-window ownership, video exceptions, and blackout mode remain future work.

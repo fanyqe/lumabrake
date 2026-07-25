@@ -16,3 +16,4 @@
 - Added initial localized flash masks for small repetitive flashing tile regions.
 - Added an initial StaticShade detector for persistent bright tile regions.
 - Added initial adaptive content dimming for persistent bright scenes.
+- Added initial inactive-monitor dimming for unchanged non-primary displays.
