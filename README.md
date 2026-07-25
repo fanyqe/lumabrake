@@ -2,7 +2,7 @@
 
 LumaBrake is an open-source Windows utility that analyzes screen luminance in real time and reduces sudden brightness spikes, repetitive flashes, static bright regions, and unnecessary brightness on inactive displays.
 
-The first working slice is focused on Brightness Spike Guard:
+The current working slices cover Brightness Spike Guard and an initial Repetitive Flash Guard:
 
 - processing stays local;
 - raw screen samples are discarded after analysis;
@@ -26,7 +26,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | System tray controls | Implemented |
 | Emergency hotkey | Implemented |
 | Local deterministic luminance analysis | Implemented |
-| Repetitive Flash Guard | Roadmap |
+| Repetitive Flash Guard | Initial tile temporal detector implemented |
 | Localized Flash Masking | Roadmap |
 | StaticShade | Roadmap |
 | Adaptive Content Dimming | Roadmap |

@@ -1,6 +1,6 @@
 # Performance Notes
 
-Phase 4 analyzes a downscaled `160 x 90` BGRA sample per active monitor and derives a `16 x 9` tile luminance summary from the same sample. This keeps each detector buffer small and avoids full-resolution CPU analysis while the runtime moves toward a lower-latency capture backend.
+Phase 5 analyzes a downscaled `160 x 90` BGRA sample per active monitor, derives a `16 x 9` tile luminance summary from the same sample, and keeps bounded per-tile transition queues for repetitive flash detection. This avoids full-resolution CPU analysis while the runtime moves toward a lower-latency capture backend.
 
 Future baselines should track:
 

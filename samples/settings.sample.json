@@ -12,5 +12,18 @@
     "maximumOpacity": 0.58,
     "hold": "00:00:00.2200000",
     "release": "00:00:00.9000000"
+  },
+  "flashGuard": {
+    "window": "00:00:01.2000000",
+    "minimumTransitions": 4,
+    "brightTileAverageThreshold": 0.62,
+    "brightTilePixelRatioThreshold": 0.35,
+    "darkTileAverageThreshold": 0.18,
+    "minimumTransitionDelta": 0.34,
+    "minimumAffectedTileRatio": 0.03,
+    "cooldown": "00:00:00.6500000",
+    "maximumOpacity": 0.62,
+    "hold": "00:00:00.3200000",
+    "release": "00:00:00.9500000"
   }
 }

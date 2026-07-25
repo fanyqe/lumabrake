@@ -24,6 +24,7 @@ Each active monitor
   -> global average / p95 / bright pixel ratio / tile luminance summary
   -> per-monitor BrightnessSpikeDetector
   -> broad bright-tile transition check
+  -> per-monitor RepetitiveFlashDetector
   -> per-monitor EffectEnvelope
   -> EffectComposer
   -> matching click-through WPF overlay opacity
@@ -68,3 +69,11 @@ Decision: calculate a small tile luminance summary for each analyzed frame and r
 Reason: p95 luminance can be high when a small region is bright, but a small bright object should not always trigger full-monitor dimming.
 
 Consequence: the first Phase 4 slice improves false-positive suppression for global dimming. Localized masks and richer scene-change diagnostics remain future work.
+
+## ADR-0006: Repetitive Flash Temporal State
+
+Decision: track per-tile bright/dark transitions inside a bounded time window and emit a `RepetitiveFlash` effect when enough transitions affect enough tiles.
+
+Reason: repetitive flashes are not the same as a single dark-to-bright spike; they require temporal transition counting and cooldown handling.
+
+Consequence: the first Phase 5 slice produces a global dimming response for detected repetitive flashes. Regional masks, red-flash detection, and merged affected-region rendering remain future work.
