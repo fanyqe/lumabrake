@@ -1,6 +1,7 @@
 using System.Windows;
 using LumaBrake.Core;
 using LumaBrake.Diagnostics;
+using LumaBrake.Domain.Effects;
 using LumaBrake.Persistence;
 
 namespace LumaBrake.App;
@@ -108,6 +109,8 @@ public partial class MainWindow : Window
         P95Text.Text = snapshot.Percentile95Luminance.ToString("0.000");
         OpacityText.Text = FormatPercent(snapshot.OverlayOpacity);
         EventsText.Text = (snapshot.SpikeEvents + snapshot.FlashEvents).ToString("N0");
+        ReasonText.Text = FormatReason(snapshot.ActiveReason);
+        RegionalMasksText.Text = snapshot.RegionalMaskCount.ToString("N0");
         if (Math.Abs(ManualDimmingSlider.Value - _controller.Settings.ManualDimmingOpacity) > 0.001)
         {
             ManualDimmingSlider.Value = _controller.Settings.ManualDimmingOpacity;
@@ -121,4 +124,14 @@ public partial class MainWindow : Window
     }
 
     private static string FormatPercent(double value) => $"{Math.Round(value * 100):0}%";
+
+    private static string FormatReason(EffectReason reason) => reason switch
+    {
+        EffectReason.BrightnessSpike => "Brightness spike",
+        EffectReason.RepetitiveFlash => "Repetitive flash",
+        EffectReason.Manual => "Manual dimming",
+        EffectReason.StaticShade => "Static shade",
+        EffectReason.AdaptiveContent => "Adaptive content",
+        _ => "None"
+    };
 }

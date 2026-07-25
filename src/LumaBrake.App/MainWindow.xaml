@@ -58,7 +58,7 @@
 
                     <TextBlock Text="Live Monitor" FontSize="18" FontWeight="SemiBold" />
 
-                    <UniformGrid Grid.Row="2" Columns="2" Rows="2">
+                    <UniformGrid Grid.Row="2" Columns="2" Rows="3">
                         <StackPanel Margin="0,0,16,16">
                             <TextBlock Text="Average luminance" Foreground="{StaticResource MutedBrush}" />
                             <TextBlock x:Name="AverageText" Text="0.000" FontSize="26" FontWeight="SemiBold" Margin="0,6,0,0" />
@@ -74,6 +74,14 @@
                         <StackPanel>
                             <TextBlock Text="Protection events" Foreground="{StaticResource MutedBrush}" />
                             <TextBlock x:Name="EventsText" Text="0" FontSize="26" FontWeight="SemiBold" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <StackPanel Margin="0,16,16,0">
+                            <TextBlock Text="Active protection" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock x:Name="ReasonText" Text="None" FontSize="22" FontWeight="SemiBold" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <StackPanel Margin="0,16,0,0">
+                            <TextBlock Text="Local dimming regions" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock x:Name="RegionalMasksText" Text="0" FontSize="26" FontWeight="SemiBold" Margin="0,6,0,0" />
                         </StackPanel>
                     </UniformGrid>
 

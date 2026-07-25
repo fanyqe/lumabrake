@@ -1,4 +1,5 @@
 using LumaBrake.Domain.Analysis;
+using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Frames;
 
 namespace LumaBrake.Analysis.Detection;
@@ -25,6 +26,7 @@ public sealed class RepetitiveFlashDetector
 
         var affectedTiles = 0;
         var maxTransitionCount = 0;
+        var affectedRegions = new List<EffectRegion>();
 
         for (var index = 0; index < summary.Tiles.Count; index++)
         {
@@ -45,6 +47,7 @@ public sealed class RepetitiveFlashDetector
             {
                 affectedTiles++;
                 maxTransitionCount = Math.Max(maxTransitionCount, state.Transitions.Count);
+                affectedRegions.Add(TileRegion(tile, summary));
             }
         }
 
@@ -71,7 +74,15 @@ public sealed class RepetitiveFlashDetector
             summary.Tiles.Count,
             affectedRatio,
             maxTransitionCount,
-            opacity);
+            opacity,
+            affectedRegions);
+    }
+
+    private static EffectRegion TileRegion(TileLuminanceStats tile, FrameTileSummary summary)
+    {
+        var width = 1.0 / summary.Columns;
+        var height = 1.0 / summary.Rows;
+        return new EffectRegion(tile.Column * width, tile.Row * height, width, height);
     }
 
     private TileFlashState StateFor(int index, double average, TileFlashLevel level)

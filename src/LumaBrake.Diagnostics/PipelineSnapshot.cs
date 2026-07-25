@@ -15,6 +15,8 @@ public sealed record PipelineSnapshot(
     long FramesAnalyzed,
     long SpikeEvents,
     long FlashEvents,
+    int RegionalMaskCount,
+    double RegionalMaskMaxOpacity,
     IReadOnlyList<MonitorPipelineSnapshot> Monitors);
 
 public sealed record MonitorPipelineSnapshot(
@@ -28,4 +30,6 @@ public sealed record MonitorPipelineSnapshot(
     EffectReason ActiveReason,
     long FramesAnalyzed,
     long SpikeEvents,
-    long FlashEvents);
+    long FlashEvents,
+    int RegionalMaskCount,
+    double RegionalMaskMaxOpacity);

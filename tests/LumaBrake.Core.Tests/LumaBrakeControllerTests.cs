@@ -132,16 +132,17 @@ public sealed class LumaBrakeControllerTests
     public async Task Start_AddsRepetitiveFlashEventsForOnlyTheFlashingMonitor()
     {
         var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
         using var controller = new LumaBrakeController(
-            new FlashingCapture(monitors[0].StableId),
-            new RecordingOverlay(),
+            new LocalizedFlashingCapture(monitors[0].StableId),
+            overlay,
             new LumaBrakeSettings
             {
                 SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
                 FlashGuard = new FlashDetectorOptions
                 {
                     MinimumTransitions = 3,
-                    MinimumAffectedTileRatio = 0.50,
+                    MinimumAffectedTileRatio = 0.005,
                     Cooldown = TimeSpan.FromSeconds(5),
                     Hold = TimeSpan.FromSeconds(5),
                     Release = TimeSpan.FromSeconds(5)
@@ -159,7 +160,48 @@ public sealed class LumaBrakeControllerTests
                 var secondary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[1].StableId);
                 return primary.FlashEvents > 0 &&
                     primary.ActiveReason == EffectReason.RepetitiveFlash &&
+                    primary.RegionalMaskCount > 0 &&
+                    overlay.LastEffect(monitors[0].StableId)?.RegionalMasks.Count > 0 &&
                     secondary.FlashEvents == 0;
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(flashDetected);
+    }
+
+    [Fact]
+    public async Task Start_UsesGlobalFlashFallbackWhenMostTilesAreAffected()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new FlashingCapture(monitors[0].StableId),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                FlashGuard = new FlashDetectorOptions
+                {
+                    MinimumTransitions = 3,
+                    MinimumAffectedTileRatio = 0.50,
+                    Cooldown = TimeSpan.FromSeconds(5),
+                    Hold = TimeSpan.FromSeconds(5),
+                    Release = TimeSpan.FromSeconds(5)
+                }
+            },
+            new MutableMonitorCatalog([monitors[0]]));
+
+        controller.Start();
+
+        var flashDetected = await WaitUntilAsync(
+            () =>
+            {
+                var effect = overlay.LastEffect(monitors[0].StableId);
+                var snapshot = controller.Snapshot().Monitors.Single();
+                return snapshot.FlashEvents > 0 &&
+                    effect is not null &&
+                    effect.GlobalOpacity > 0 &&
+                    effect.RegionalMasks.Count == 0;
             },
             TimeSpan.FromSeconds(3));
 
@@ -249,6 +291,64 @@ public sealed class LumaBrakeControllerTests
         }
     }
 
+    private sealed class LocalizedFlashingCapture : IFrameCapture
+    {
+        private readonly string _flashingStableId;
+        private readonly ConcurrentDictionary<string, int> _captureCounts = new(StringComparer.OrdinalIgnoreCase);
+
+        public LocalizedFlashingCapture(string flashingStableId)
+        {
+            _flashingStableId = flashingStableId;
+        }
+
+        public CapturedFrame Capture(MonitorDescriptor monitor)
+        {
+            var count = _captureCounts.AddOrUpdate(monitor.StableId, 1, (_, current) => current + 1);
+            var isBright = string.Equals(monitor.StableId, _flashingStableId, StringComparison.OrdinalIgnoreCase) &&
+                count % 2 == 0;
+
+            return new CapturedFrame(
+                LocalizedPixels(isBright),
+                new FrameMetadata(DateTimeOffset.UtcNow, 160, 90, monitor.DeviceName),
+                monitor);
+        }
+
+        public void Dispose()
+        {
+        }
+
+        private static byte[] LocalizedPixels(bool isBright)
+        {
+            var pixels = new byte[160 * 90 * 4];
+            for (var index = 0; index < pixels.Length; index += 4)
+            {
+                pixels[index] = 0;
+                pixels[index + 1] = 0;
+                pixels[index + 2] = 0;
+                pixels[index + 3] = 255;
+            }
+
+            if (!isBright)
+            {
+                return pixels;
+            }
+
+            for (var y = 0; y < 10; y++)
+            {
+                for (var x = 0; x < 10; x++)
+                {
+                    var offset = ((y * 160) + x) * 4;
+                    pixels[offset] = 255;
+                    pixels[offset + 1] = 255;
+                    pixels[offset + 2] = 255;
+                    pixels[offset + 3] = 255;
+                }
+            }
+
+            return pixels;
+        }
+    }
+
     private sealed class FlashingCapture : IFrameCapture
     {
         private readonly string _flashingStableId;
@@ -293,6 +393,7 @@ public sealed class LumaBrakeControllerTests
     private sealed class RecordingOverlay : IOverlayRenderer
     {
         private readonly object _gate = new();
+        private readonly Dictionary<string, FinalEffectState> _effects = new(StringComparer.OrdinalIgnoreCase);
 
         public IReadOnlyList<string> LastSyncedStableIds { get; private set; } = [];
 
@@ -310,8 +411,12 @@ public sealed class LumaBrakeControllerTests
         {
         }
 
-        public void SetOpacity(string monitorStableId, double opacity)
+        public void SetEffect(string monitorStableId, FinalEffectState effect)
         {
+            lock (_gate)
+            {
+                _effects[monitorStableId] = effect;
+            }
         }
 
         public void HideAll()
@@ -319,6 +424,14 @@ public sealed class LumaBrakeControllerTests
             lock (_gate)
             {
                 HideAllCalls++;
+            }
+        }
+
+        public FinalEffectState? LastEffect(string monitorStableId)
+        {
+            lock (_gate)
+            {
+                return _effects.GetValueOrDefault(monitorStableId);
             }
         }
 

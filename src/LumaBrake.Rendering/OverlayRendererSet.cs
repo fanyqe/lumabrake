@@ -1,4 +1,5 @@
 using System.Windows.Threading;
+using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Monitors;
 
 namespace LumaBrake.Rendering;
@@ -50,18 +51,18 @@ public sealed class OverlayRendererSet : IOverlayRenderer
                     window.Show();
                 }
 
-                window.SetOpacity(0);
+                window.SetEffect(FinalEffectState.Clear);
             }
         });
     }
 
-    public void SetOpacity(string monitorStableId, double opacity)
+    public void SetEffect(string monitorStableId, FinalEffectState effect)
     {
         OnUiThread(() =>
         {
             if (_windows.TryGetValue(monitorStableId, out var window))
             {
-                window.SetOpacity(opacity);
+                window.SetEffect(effect);
             }
         });
     }

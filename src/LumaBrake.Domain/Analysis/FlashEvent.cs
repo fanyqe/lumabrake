@@ -1,3 +1,5 @@
+using LumaBrake.Domain.Effects;
+
 namespace LumaBrake.Domain.Analysis;
 
 public sealed record FlashEvent(
@@ -6,4 +8,5 @@ public sealed record FlashEvent(
     int TotalTileCount,
     double AffectedTileRatio,
     int MaxTransitionCount,
-    double RecommendedOpacity);
+    double RecommendedOpacity,
+    IReadOnlyList<EffectRegion> AffectedRegions);

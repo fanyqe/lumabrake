@@ -1,3 +1,4 @@
+using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Monitors;
 
 namespace LumaBrake.Rendering;
@@ -8,7 +9,7 @@ public interface IOverlayRenderer : IDisposable
 
     void Show();
 
-    void SetOpacity(string monitorStableId, double opacity);
+    void SetEffect(string monitorStableId, FinalEffectState effect);
 
     void HideAll();
 }

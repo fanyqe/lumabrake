@@ -33,4 +33,23 @@ public sealed class EffectEnvelopeTests
 
         Assert.Equal(0.60, envelope.ActiveAt(now).Single().Opacity, precision: 12);
     }
+
+    [Fact]
+    public void ActiveAt_ReleasesRegionalRequestWithoutDroppingRegion()
+    {
+        var envelope = new EffectEnvelope();
+        var now = DateTimeOffset.UnixEpoch;
+        envelope.Add(new EffectRequest(
+            EffectReason.RepetitiveFlash,
+            0.60,
+            now,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(100),
+            [new EffectRegion(0.25, 0.25, 0.25, 0.25)]));
+
+        var request = envelope.ActiveAt(now.AddMilliseconds(150)).Single();
+
+        Assert.Equal(0.30, request.Opacity, precision: 12);
+        Assert.Equal(new EffectRegion(0.25, 0.25, 0.25, 0.25), Assert.Single(request.Regions));
+    }
 }

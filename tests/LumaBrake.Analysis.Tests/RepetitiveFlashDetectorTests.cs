@@ -53,6 +53,11 @@ public sealed class RepetitiveFlashDetectorTests
         var flash = Assert.Single(events);
         Assert.Equal(1, flash!.AffectedTileCount);
         Assert.Equal(0.0625, flash.AffectedTileRatio, precision: 12);
+        var region = Assert.Single(flash.AffectedRegions);
+        Assert.Equal(0, region.X, precision: 12);
+        Assert.Equal(0, region.Y, precision: 12);
+        Assert.Equal(0.25, region.Width, precision: 12);
+        Assert.Equal(0.25, region.Height, precision: 12);
     }
 
     [Fact]

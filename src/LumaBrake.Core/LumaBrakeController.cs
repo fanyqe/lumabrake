@@ -12,6 +12,8 @@ namespace LumaBrake.Core;
 
 public sealed class LumaBrakeController : IDisposable
 {
+    private const double RegionalFlashFallbackRatio = 0.35;
+
     private readonly IFrameCapture _capture;
     private readonly IOverlayRenderer _overlay;
     private readonly Bgra32FrameAnalyzer _analyzer = new();
@@ -95,6 +97,8 @@ public sealed class LumaBrakeController : IDisposable
                 pipeline.Envelope.Clear();
                 pipeline.LastOpacity = 0;
                 pipeline.LastReason = EffectReason.None;
+                pipeline.LastRegionalMaskCount = 0;
+                pipeline.LastRegionalMaskMaxOpacity = 0;
             }
         }
 
@@ -126,6 +130,8 @@ public sealed class LumaBrakeController : IDisposable
                 pipelines.Sum(pipeline => pipeline.FramesAnalyzed),
                 pipelines.Sum(pipeline => pipeline.SpikeEvents),
                 pipelines.Sum(pipeline => pipeline.FlashEvents),
+                pipelines.Sum(pipeline => pipeline.LastRegionalMaskCount),
+                pipelines.Select(pipeline => pipeline.LastRegionalMaskMaxOpacity).DefaultIfEmpty(0).Max(),
                 monitorSnapshots);
         }
     }
@@ -250,7 +256,7 @@ public sealed class LumaBrakeController : IDisposable
             var analysis = _analyzer.Analyze(captured.BgraPixels, captured.Metadata);
             var spike = pipeline.Detector.Observe(analysis);
             var flash = pipeline.FlashDetector.Observe(analysis);
-            double opacity;
+            FinalEffectState final;
 
             lock (_gate)
             {
@@ -277,12 +283,16 @@ public sealed class LumaBrakeController : IDisposable
                 if (flash is not null)
                 {
                     current.FlashEvents++;
+                    var flashRegions = flash.AffectedTileRatio < RegionalFlashFallbackRatio
+                        ? flash.AffectedRegions
+                        : Array.Empty<EffectRegion>();
                     current.Envelope.Add(new EffectRequest(
                         EffectReason.RepetitiveFlash,
                         flash.RecommendedOpacity,
                         flash.Timestamp,
                         Settings.FlashGuard.Hold,
-                        Settings.FlashGuard.Release));
+                        Settings.FlashGuard.Release,
+                        flashRegions));
                 }
 
                 var now = DateTimeOffset.UtcNow;
@@ -297,13 +307,14 @@ public sealed class LumaBrakeController : IDisposable
                         TimeSpan.Zero));
                 }
 
-                var final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity);
+                final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity);
                 current.LastOpacity = final.GlobalOpacity;
                 current.LastReason = final.GlobalReason;
-                opacity = final.GlobalOpacity;
+                current.LastRegionalMaskCount = final.RegionalMasks.Count;
+                current.LastRegionalMaskMaxOpacity = final.RegionalMasks.Select(mask => mask.Opacity).DefaultIfEmpty(0).Max();
             }
 
-            _overlay.SetOpacity(pipeline.Monitor.StableId, opacity);
+            _overlay.SetEffect(pipeline.Monitor.StableId, final);
         }
 
         PublishSnapshot();
@@ -326,7 +337,9 @@ public sealed class LumaBrakeController : IDisposable
             pipeline.LastReason,
             pipeline.FramesAnalyzed,
             pipeline.SpikeEvents,
-            pipeline.FlashEvents);
+            pipeline.FlashEvents,
+            pipeline.LastRegionalMaskCount,
+            pipeline.LastRegionalMaskMaxOpacity);
 
     private sealed class MonitorPipeline
     {
@@ -358,5 +371,9 @@ public sealed class LumaBrakeController : IDisposable
         public double LastOpacity { get; set; }
 
         public EffectReason LastReason { get; set; } = EffectReason.None;
+
+        public int LastRegionalMaskCount { get; set; }
+
+        public double LastRegionalMaskMaxOpacity { get; set; }
     }
 }
