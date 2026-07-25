@@ -1,0 +1,13 @@
+<Application x:Class="LumaBrake.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <SolidColorBrush x:Key="PageBrush" Color="#101416" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#171D20" />
+        <SolidColorBrush x:Key="RuleBrush" Color="#2D383D" />
+        <SolidColorBrush x:Key="InkBrush" Color="#EEF5F2" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#A9B7B2" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#5EE0C2" />
+    </Application.Resources>
+</Application>

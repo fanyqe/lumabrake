@@ -489,3 +489,9 @@ $RECYCLE.BIN/
 artifacts/
 coverage/
 *.log
+
+# The macOS "*.app" rule above would also hide the WPF project folder.
+!src/LumaBrake.App/
+!src/LumaBrake.App/**
+src/LumaBrake.App/bin/
+src/LumaBrake.App/obj/
