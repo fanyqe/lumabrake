@@ -1,6 +1,8 @@
 using System.Globalization;
 using LumaBrake.Analysis.Frames;
 using LumaBrake.Capture;
+using LumaBrake.Diagnostics;
+using LumaBrake.Domain.Monitors;
 using LumaBrake.Persistence;
 using LumaBrake.Platform.Windows;
 
@@ -65,7 +67,37 @@ switch (command)
         Console.Error.WriteLine("Usage: lumabrake monitor list");
         return 2;
 
+    case "diagnostics":
+        if (args.Length >= 2 && string.Equals(args[1], "export", StringComparison.OrdinalIgnoreCase))
+        {
+            var outputPath = args.Length >= 3
+                ? args[2]
+                : Path.Combine(Environment.CurrentDirectory, $"lumabrake-diagnostics-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.zip");
+            string? monitorError = null;
+            IReadOnlyList<MonitorDescriptor> monitors;
+
+            try
+            {
+                monitors = new WindowsMonitorEnumerator().GetMonitors();
+            }
+            catch (InvalidOperationException ex)
+            {
+                monitors = [];
+                monitorError = ex.Message;
+            }
+
+            var exportedPath = new DiagnosticPackageExporter().Export(
+                new DiagnosticPackageContent(settings, monitors, monitorError),
+                outputPath);
+
+            Console.WriteLine($"Diagnostics package written: {exportedPath}");
+            return 0;
+        }
+
+        Console.Error.WriteLine("Usage: lumabrake diagnostics export [output.zip]");
+        return 2;
+
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|capture-test|monitor list");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|capture-test|monitor list|diagnostics export [output.zip]");
         return 2;
 }
