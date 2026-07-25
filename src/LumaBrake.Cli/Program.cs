@@ -2,6 +2,7 @@ using System.Globalization;
 using LumaBrake.Analysis.Frames;
 using LumaBrake.Capture;
 using LumaBrake.Diagnostics;
+using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Monitors;
 using LumaBrake.Persistence;
 using LumaBrake.Platform.Windows;
@@ -16,6 +17,9 @@ switch (command)
         Console.WriteLine(settings.Enabled ? "LumaBrake settings: enabled" : "LumaBrake settings: disabled");
         Console.WriteLine($"Maximum software dimming: {Math.Round(settings.UserMaximumOpacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
         Console.WriteLine($"Manual software dimming: {Math.Round(settings.ManualDimmingOpacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
+        Console.WriteLine(settings.Tint.Enabled
+            ? $"Tint: #{settings.Tint.Red:X2}{settings.Tint.Green:X2}{settings.Tint.Blue:X2} {Math.Round(settings.Tint.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%"
+            : "Tint: off");
         return 0;
 
     case "enable":
@@ -54,6 +58,25 @@ switch (command)
 
         store.Save(settings with { ManualDimmingOpacity = manualOpacity });
         Console.WriteLine($"Manual software dimming: {Math.Round(manualOpacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
+        return 0;
+
+    case "tint":
+        TintOptions tintOptions;
+        try
+        {
+            tintOptions = ParseTintOptions(args);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            Console.Error.WriteLine("Usage: lumabrake tint <off|warm|neutral> [0-60]");
+            return 2;
+        }
+
+        store.Save(settings with { Tint = tintOptions });
+        Console.WriteLine(tintOptions.Enabled
+            ? $"Tint: #{tintOptions.Red:X2}{tintOptions.Green:X2}{tintOptions.Blue:X2} {Math.Round(tintOptions.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%"
+            : "Tint: off");
         return 0;
 
     case "capture-test":
@@ -122,7 +145,7 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|capture-test|monitor list|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|diagnostics export [output.zip]");
         return 2;
 }
 
@@ -141,4 +164,37 @@ static double ParseManualOpacity(string value)
 
     var opacity = parsed > 1 ? parsed / 100.0 : parsed;
     return Math.Clamp(opacity, 0, 0.90);
+}
+
+static TintOptions ParseTintOptions(IReadOnlyList<string> args)
+{
+    if (args.Count < 2)
+    {
+        throw new ArgumentException("Tint mode is required.", nameof(args));
+    }
+
+    if (string.Equals(args[1], "off", StringComparison.OrdinalIgnoreCase))
+    {
+        return new TintOptions { Enabled = false };
+    }
+
+    var opacity = args.Count >= 3 ? ParseTintOpacity(args[2]) : 0.12;
+    return args[1].ToLowerInvariant() switch
+    {
+        "warm" => new TintOptions { Enabled = true, Red = 255, Green = 214, Blue = 170, Opacity = opacity },
+        "neutral" => new TintOptions { Enabled = true, Red = 255, Green = 244, Blue = 230, Opacity = opacity },
+        _ => throw new ArgumentException("Tint mode must be 'off', 'warm', or 'neutral'.", nameof(args))
+    };
+}
+
+static double ParseTintOpacity(string value)
+{
+    var normalized = value.Trim().TrimEnd('%');
+    if (!double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+    {
+        throw new ArgumentException("Tint opacity must be a percentage from 0 to 60.", nameof(value));
+    }
+
+    var opacity = parsed > 1 ? parsed / 100.0 : parsed;
+    return Math.Clamp(opacity, 0, 0.60);
 }

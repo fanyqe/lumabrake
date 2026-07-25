@@ -22,6 +22,13 @@ public sealed class OverlayWindow : Window
         Opacity = 0
     };
 
+    private readonly Rectangle _tintOverlay = new()
+    {
+        Fill = Brushes.Transparent,
+        IsHitTestVisible = false,
+        Opacity = 0
+    };
+
     private readonly List<Rectangle> _regionalOverlays = [];
 
     public OverlayWindow(MonitorDescriptor monitor)
@@ -40,6 +47,7 @@ public sealed class OverlayWindow : Window
         Opacity = 1;
 
         _surface.Children.Add(_globalOverlay);
+        _surface.Children.Add(_tintOverlay);
 
         ApplyMonitorBounds(monitor);
         SizeChanged += (_, _) => UpdateOverlayGeometry();
@@ -79,10 +87,11 @@ public sealed class OverlayWindow : Window
         }
 
         _globalOverlay.Opacity = Math.Clamp(effect.GlobalOpacity, 0, 0.92);
+        ApplyTint(effect.Tint);
         UpdateRegionalOverlays(effect.RegionalMasks);
         UpdateOverlayGeometry();
 
-        if (_globalOverlay.Opacity <= 0.001 && ActiveRegionalOverlayCount() == 0)
+        if (_globalOverlay.Opacity <= 0.001 && _tintOverlay.Opacity <= 0.001 && ActiveRegionalOverlayCount() == 0)
         {
             Hide();
         }
@@ -130,6 +139,8 @@ public sealed class OverlayWindow : Window
         _surface.Height = height;
         _globalOverlay.Width = width;
         _globalOverlay.Height = height;
+        _tintOverlay.Width = width;
+        _tintOverlay.Height = height;
 
         foreach (var rectangle in _regionalOverlays.Where(rectangle => rectangle.Visibility == Visibility.Visible))
         {
@@ -177,6 +188,20 @@ public sealed class OverlayWindow : Window
             _regionalOverlays[index].Opacity = 0;
             _regionalOverlays[index].Visibility = Visibility.Collapsed;
         }
+    }
+
+    private void ApplyTint(TintEffect tint)
+    {
+        var clamped = tint.Clamp();
+        if (!clamped.Enabled || clamped.Opacity <= 0.001)
+        {
+            _tintOverlay.Opacity = 0;
+            _tintOverlay.Fill = Brushes.Transparent;
+            return;
+        }
+
+        _tintOverlay.Fill = new SolidColorBrush(Color.FromRgb(clamped.Red, clamped.Green, clamped.Blue));
+        _tintOverlay.Opacity = clamped.Opacity;
     }
 
     private int ActiveRegionalOverlayCount() =>

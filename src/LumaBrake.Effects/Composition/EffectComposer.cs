@@ -4,9 +4,13 @@ namespace LumaBrake.Effects.Composition;
 
 public sealed class EffectComposer
 {
-    public FinalEffectState Compose(IEnumerable<EffectRequest> activeRequests, double userMaximumOpacity)
+    public FinalEffectState Compose(
+        IEnumerable<EffectRequest> activeRequests,
+        double userMaximumOpacity,
+        TintEffect? tint = null)
     {
         var maximumOpacity = Math.Clamp(userMaximumOpacity, 0, 0.92);
+        var finalTint = tint?.Clamp() ?? TintEffect.Disabled;
         var requests = activeRequests
             .Where(request => request.Opacity > 0)
             .OrderBy(request => Priority(request.Reason))
@@ -14,7 +18,7 @@ public sealed class EffectComposer
 
         if (requests.Length == 0)
         {
-            return FinalEffectState.Clear;
+            return finalTint.Enabled ? FinalEffectState.Clear with { Tint = finalTint } : FinalEffectState.Clear;
         }
 
         var globalRequests = requests.Where(request => !request.IsRegional).ToArray();
@@ -38,7 +42,7 @@ public sealed class EffectComposer
             .Where(mask => mask.Opacity > 0 && mask.Region.Area > 0)
             .ToArray();
 
-        return new FinalEffectState(combined, winningReason, reasons, regionalMasks);
+        return new FinalEffectState(combined, winningReason, reasons, regionalMasks, finalTint);
     }
 
     private static double RegionalOverlayOpacity(double requestedOpacity, double globalOpacity, double maximumOpacity)

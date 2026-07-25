@@ -47,6 +47,21 @@ public sealed class EffectComposerTests
         Assert.Equal(0, state.GlobalOpacity);
         Assert.Equal(EffectReason.None, state.GlobalReason);
         Assert.Empty(state.RegionalMasks);
+        Assert.False(state.Tint.Enabled);
+    }
+
+    [Fact]
+    public void Compose_CarriesTintWithoutAddingDimming()
+    {
+        var state = new EffectComposer().Compose(
+            [],
+            userMaximumOpacity: 0.90,
+            new TintEffect(true, 255, 214, 170, 0.18));
+
+        Assert.Equal(0, state.GlobalOpacity);
+        Assert.Equal(EffectReason.None, state.GlobalReason);
+        Assert.True(state.Tint.Enabled);
+        Assert.Equal(0.18, state.Tint.Opacity, precision: 12);
     }
 
     [Fact]

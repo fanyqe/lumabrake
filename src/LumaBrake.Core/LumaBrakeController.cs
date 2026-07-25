@@ -343,7 +343,7 @@ public sealed class LumaBrakeController : IDisposable
                         TimeSpan.Zero));
                 }
 
-                final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity);
+                final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity, Settings.Tint.ToEffect());
                 current.LastOpacity = final.GlobalOpacity;
                 current.LastReason = final.GlobalReason;
                 current.LastRegionalMaskCount = final.RegionalMasks.Count;

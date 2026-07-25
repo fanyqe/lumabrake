@@ -332,6 +332,40 @@ public sealed class LumaBrakeControllerTests
         Assert.True(inactiveDetected);
     }
 
+    [Fact]
+    public async Task Start_RendersTintWithoutAutomaticDimming()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                Tint = new TintOptions { Enabled = true, Red = 255, Green = 214, Blue = 170, Opacity = 0.14 }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var tintRendered = await WaitUntilAsync(
+            () => monitors.All(monitor =>
+            {
+                var effect = overlay.LastEffect(monitor.StableId);
+                return effect is not null &&
+                    effect.GlobalOpacity == 0 &&
+                    effect.GlobalReason == EffectReason.None &&
+                    effect.Tint.Enabled &&
+                    Math.Abs(effect.Tint.Opacity - 0.14) < 0.001;
+            }),
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(tintRendered);
+    }
+
     private static MonitorDescriptor[] TestMonitors() =>
     [
         new(

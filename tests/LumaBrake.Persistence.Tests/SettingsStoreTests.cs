@@ -14,6 +14,7 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.True(settings.Enabled);
         Assert.Equal(0.64, settings.UserMaximumOpacity, precision: 12);
         Assert.Equal(0, settings.ManualDimmingOpacity, precision: 12);
+        Assert.False(settings.Tint.Enabled);
     }
 
     [Fact]
