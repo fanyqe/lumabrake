@@ -1,6 +1,7 @@
 using System.Globalization;
 using LumaBrake.Analysis.Frames;
 using LumaBrake.Capture;
+using LumaBrake.Cli;
 using LumaBrake.Diagnostics;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Monitors;
@@ -21,6 +22,10 @@ switch (command)
         Console.WriteLine(settings.Tint.Enabled
             ? $"Tint: #{settings.Tint.Red:X2}{settings.Tint.Green:X2}{settings.Tint.Blue:X2} {Math.Round(settings.Tint.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%"
             : "Tint: off");
+        Console.WriteLine($"Schedules: {(settings.Schedules.Enabled ? "enabled" : "disabled")}, {settings.Schedules.Entries.Length.ToString(CultureInfo.InvariantCulture)} configured");
+        Console.WriteLine($"Startup restoration: {(settings.StartupRestoration.Enabled ? "enabled" : "disabled")}");
+        var activeSchedule = settings.Schedules.ActiveAt(DateTimeOffset.Now);
+        Console.WriteLine(activeSchedule is null ? "Active schedule: none" : $"Active schedule: {activeSchedule.Name}");
         return 0;
 
     case "enable":
@@ -135,6 +140,12 @@ switch (command)
         Console.Error.WriteLine("Usage: lumabrake hardware list");
         return 2;
 
+    case "schedule":
+        return ScheduleCliCommands.RunSchedule(args, store, settings);
+
+    case "startup-restore":
+        return ScheduleCliCommands.RunStartupRestore(args, store, settings);
+
     case "diagnostics":
         if (args.Length >= 2 && string.Equals(args[1], "export", StringComparison.OrdinalIgnoreCase))
         {
@@ -166,7 +177,7 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|hardware list|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|hardware list|schedule <list|enable|disable|clear|night>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
         return 2;
 }
 

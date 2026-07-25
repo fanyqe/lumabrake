@@ -13,7 +13,9 @@ public sealed class SettingsStore
 
     public SettingsStore(string appName = "LumaBrake", string? rootDirectory = null)
     {
-        var root = rootDirectory ?? Path.Combine(
+        var root = rootDirectory ??
+            Environment.GetEnvironmentVariable("LUMABRAKE_SETTINGS_ROOT") ??
+            Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             appName);
         Directory.CreateDirectory(root);

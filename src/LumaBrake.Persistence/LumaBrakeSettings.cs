@@ -1,5 +1,6 @@
 using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
+using LumaBrake.Domain.Schedules;
 
 namespace LumaBrake.Persistence;
 
@@ -22,4 +23,8 @@ public sealed record LumaBrakeSettings
     public InactiveMonitorOptions InactiveMonitor { get; init; } = new();
 
     public TintOptions Tint { get; init; } = new();
+
+    public ScheduleOptions Schedules { get; init; } = new();
+
+    public StartupRestorationOptions StartupRestoration { get; init; } = new();
 }
