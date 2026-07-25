@@ -44,7 +44,8 @@
 
 ## 0.7.0 - Hardware Brightness and Schedules
 
-- DDC/CI detection and rate-limited writes.
+- Read-only DDC/CI capability detection.
+- Rate-limited hardware brightness reads and writes.
 - Schedules and startup restoration.
 
 ## 0.8.0 - Focus Dimming and Tint

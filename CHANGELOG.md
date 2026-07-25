@@ -18,3 +18,4 @@
 - Added initial adaptive content dimming for persistent bright scenes.
 - Added initial inactive-monitor dimming for unchanged non-primary displays.
 - Added a basic CLI-controlled tint overlay.
+- Added read-only DDC/CI hardware capability detection through the CLI.

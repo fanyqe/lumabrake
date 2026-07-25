@@ -2,14 +2,14 @@
 
 LumaBrake is an open-source Windows utility that analyzes screen luminance in real time and reduces sudden brightness spikes, repetitive flashes, static bright regions, and unnecessary brightness on inactive displays.
 
-The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, and optional tint:
+The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, optional tint, and read-only DDC/CI capability detection:
 
 - processing stays local;
 - raw screen samples are discarded after analysis;
 - no AI, cloud service, telemetry, OCR, or screen recording is used;
 - the app runs from a native WPF dashboard and system tray;
 - click-through overlays apply software dimming on active Windows monitors;
-- active Windows monitors can be listed from the CLI;
+- active Windows monitors and DDC/CI hardware capabilities can be listed from the CLI;
 - `Ctrl+Alt+Shift+L` performs emergency disable;
 - corrupted local settings are quarantined and replaced with defaults;
 - protected content, HDR, exclusive full-screen apps, and GPU/display driver behavior may limit operation.
@@ -33,7 +33,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Inactive Monitor Dimming | Initial non-primary unchanged-frame dimming implemented |
 | Focus Dimming | Roadmap |
 | Optional Tint | Basic CLI-controlled tint implemented |
-| Hardware Brightness | Roadmap |
+| Hardware Brightness | Read-only DDC/CI capability detection implemented |
 | Profiles, rules, schedules | Roadmap |
 
 ## Build
@@ -66,6 +66,7 @@ dotnet run --project src/LumaBrake.Cli -- tint warm 10
 dotnet run --project src/LumaBrake.Cli -- tint off
 dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
+dotnet run --project src/LumaBrake.Cli -- hardware list
 dotnet run --project src/LumaBrake.Cli -- diagnostics export
 ```
 

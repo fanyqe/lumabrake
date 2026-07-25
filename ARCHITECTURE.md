@@ -10,6 +10,7 @@ LumaBrake is a native Windows desktop application split into testable domain log
 - `LumaBrake.Effects`: centralized opacity composition and release envelopes.
 - `LumaBrake.Capture`: current GDI per-monitor downscaled capture path.
 - `LumaBrake.Rendering`: click-through overlay windows, one per active monitor.
+- `LumaBrake.MonitorControl`: read-only DDC/CI capability discovery for physical monitors.
 - `LumaBrake.Platform.Windows`: Win32 interop for hotkeys, capture, monitor bounds, overlay styles.
 - `LumaBrake.Persistence`: local JSON settings with atomic replace.
 - `LumaBrake.Diagnostics`: pipeline snapshots for UI and future export.
@@ -120,3 +121,11 @@ Decision: carry tint as part of `FinalEffectState` and render it as a full-monit
 Reason: tint should never alter the captured frame metrics used by luminance, flash, static, adaptive, or inactivity detectors.
 
 Consequence: Phase 9 has a basic CLI-controlled warm/neutral tint path. Per-monitor tint, schedules, richer color modes, and UI controls remain future work.
+
+## ADR-0012: Read-Only DDC/CI Capability Discovery
+
+Decision: expose hardware brightness support first as a read-only `lumabrake hardware list` diagnostic command that enumerates physical monitor handles and reads DDC/CI capability metadata.
+
+Reason: DDC/CI calls can be slow or unreliable on some displays, so hardware control must be introduced separately from the low-latency capture, analysis, and overlay loop.
+
+Consequence: Phase 10 now has a safe capability-detection base. Brightness reads, writes, rate limiting, monitor blacklists, reconnect recovery, and schedule/profile integration remain future work.
