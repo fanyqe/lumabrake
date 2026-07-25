@@ -82,13 +82,18 @@ public sealed class LumaBrakeController : IDisposable
 
     public void EmergencyDisable()
     {
-        ClearActiveEffects(resetManualDimming: true);
+        ClearActiveEffects(resetManualDimming: true, disableRuntime: true);
     }
 
-    private void ClearActiveEffects(bool resetManualDimming)
+    private void ClearActiveEffects(bool resetManualDimming, bool disableRuntime = false)
     {
         lock (_gate)
         {
+            if (disableRuntime)
+            {
+                Settings = Settings with { Enabled = false };
+            }
+
             if (resetManualDimming)
             {
                 Settings = Settings with { ManualDimmingOpacity = 0 };
