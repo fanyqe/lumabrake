@@ -24,3 +24,9 @@ dotnet --list-sdks
 ```powershell
 dotnet run --project src/LumaBrake.Cli -- capture-test
 ```
+
+## Monitor List
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- monitor list
+```

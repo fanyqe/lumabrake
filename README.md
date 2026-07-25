@@ -9,6 +9,7 @@ The first working slice is focused on Brightness Spike Guard:
 - no AI, cloud service, telemetry, OCR, or screen recording is used;
 - the app runs from a native WPF dashboard and system tray;
 - a click-through overlay applies software dimming;
+- active Windows monitors can be listed from the CLI;
 - `Ctrl+Alt+Shift+L` performs emergency disable;
 - corrupted local settings are quarantined and replaced with defaults;
 - protected content, HDR, exclusive full-screen apps, and GPU/display driver behavior may limit operation.
@@ -58,6 +59,7 @@ dotnet run --project src/LumaBrake.Cli -- status
 dotnet run --project src/LumaBrake.Cli -- disable
 dotnet run --project src/LumaBrake.Cli -- safe-mode
 dotnet run --project src/LumaBrake.Cli -- capture-test
+dotnet run --project src/LumaBrake.Cli -- monitor list
 ```
 
 ## Safety

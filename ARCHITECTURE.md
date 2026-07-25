@@ -43,3 +43,11 @@ Consequence: this is not the final high-performance capture backend. DXGI Deskto
 Decision: create one top-level transparent WPF overlay for the primary monitor in Phase 2, set it to click-through and non-activating, and call `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)` where supported.
 
 Consequence: Windows versions or capture paths that do not honor display affinity may still require a future feedback-loop mitigation path.
+
+## ADR-0003: Monitor Enumeration
+
+Decision: Phase 3 begins with Win32 `EnumDisplayMonitors` and `GetMonitorInfo` enumeration feeding a shared domain monitor descriptor.
+
+Reason: the product needs stable monitor identity, bounds, work area, and primary/secondary state before per-monitor capture sessions and overlays are expanded.
+
+Consequence: hot-plug event subscriptions and persistent monitor matching are still future work, but CLI and UI now use the same monitor source.

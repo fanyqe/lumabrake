@@ -6,3 +6,4 @@
 - Added Phase 2 Brightness Spike Guard vertical slice.
 - Added WPF dashboard, tray icon, click-through overlay, emergency hotkey, and CLI settings commands.
 - Added deterministic luminance, spike detector, effect composition, and settings recovery tests.
+- Added Windows monitor enumeration and `lumabrake monitor list` CLI smoke command.
