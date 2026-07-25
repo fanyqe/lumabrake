@@ -59,7 +59,8 @@ public sealed class EffectComposer
         EffectReason.RepetitiveFlash => 1,
         EffectReason.BrightnessSpike => 2,
         EffectReason.StaticShade => 3,
-        EffectReason.AdaptiveContent => 4,
+        EffectReason.InactiveMonitor => 4,
+        EffectReason.AdaptiveContent => 5,
         _ => 99
     };
 }

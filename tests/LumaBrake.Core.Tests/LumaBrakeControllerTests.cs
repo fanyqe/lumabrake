@@ -291,6 +291,47 @@ public sealed class LumaBrakeControllerTests
         Assert.True(adaptiveDetected);
     }
 
+    [Fact]
+    public async Task Start_DimsOnlySecondaryMonitorWhenFrameStaysInactive()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions
+                {
+                    MinimumInactiveDuration = TimeSpan.FromMilliseconds(100),
+                    MaximumFrameGap = TimeSpan.FromMilliseconds(500),
+                    Hold = TimeSpan.FromMilliseconds(250),
+                    Release = TimeSpan.FromMilliseconds(250),
+                    Opacity = 0.22
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var inactiveDetected = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                var primary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[0].StableId);
+                var secondary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[1].StableId);
+                return primary.ActiveReason == EffectReason.None &&
+                    secondary.ActiveReason == EffectReason.InactiveMonitor &&
+                    secondary.OverlayOpacity > 0 &&
+                    overlay.LastEffect(monitors[1].StableId)?.GlobalReason == EffectReason.InactiveMonitor;
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(inactiveDetected);
+    }
+
     private static MonitorDescriptor[] TestMonitors() =>
     [
         new(

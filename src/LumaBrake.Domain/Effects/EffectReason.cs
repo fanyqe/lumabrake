@@ -7,5 +7,6 @@ public enum EffectReason
     BrightnessSpike = 20,
     RepetitiveFlash = 30,
     StaticShade = 40,
+    InactiveMonitor = 45,
     AdaptiveContent = 50
 }

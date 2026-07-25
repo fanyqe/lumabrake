@@ -2,7 +2,9 @@ using LumaBrake.Analysis.Detection;
 using LumaBrake.Analysis.Frames;
 using LumaBrake.Capture;
 using LumaBrake.Diagnostics;
+using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
+using LumaBrake.Domain.Frames;
 using LumaBrake.Domain.Monitors;
 using LumaBrake.Effects.Composition;
 using LumaBrake.Persistence;
@@ -258,6 +260,7 @@ public sealed class LumaBrakeController : IDisposable
             var flash = pipeline.FlashDetector.Observe(analysis);
             var staticShade = pipeline.StaticShadeDetector.Observe(analysis);
             var adaptive = pipeline.AdaptiveDetector.Observe(analysis);
+            var inactive = ObserveInactiveMonitor(pipeline, analysis);
             FinalEffectState final;
 
             lock (_gate)
@@ -318,6 +321,16 @@ public sealed class LumaBrakeController : IDisposable
                         Settings.AdaptiveContent.Release));
                 }
 
+                if (inactive is not null)
+                {
+                    current.Envelope.Add(new EffectRequest(
+                        EffectReason.InactiveMonitor,
+                        inactive.RecommendedOpacity,
+                        inactive.Timestamp,
+                        Settings.InactiveMonitor.Hold,
+                        Settings.InactiveMonitor.Release));
+                }
+
                 var now = DateTimeOffset.UtcNow;
                 var activeRequests = current.Envelope.ActiveAt(now).ToList();
                 if (Settings.ManualDimmingOpacity > 0)
@@ -341,6 +354,17 @@ public sealed class LumaBrakeController : IDisposable
         }
 
         PublishSnapshot();
+    }
+
+    private static InactiveMonitorEvent? ObserveInactiveMonitor(MonitorPipeline pipeline, FrameAnalysisResult analysis)
+    {
+        if (pipeline.Monitor.IsPrimary)
+        {
+            pipeline.InactiveDetector.Reset();
+            return null;
+        }
+
+        return pipeline.InactiveDetector.Observe(analysis);
     }
 
     private void PublishSnapshot()
@@ -373,6 +397,7 @@ public sealed class LumaBrakeController : IDisposable
             FlashDetector = new RepetitiveFlashDetector(settings.FlashGuard);
             StaticShadeDetector = new StaticShadeDetector(settings.StaticShade);
             AdaptiveDetector = new AdaptiveContentDimmingDetector(settings.AdaptiveContent);
+            InactiveDetector = new InactiveMonitorDimmingDetector(settings.InactiveMonitor);
         }
 
         public MonitorDescriptor Monitor { get; set; }
@@ -384,6 +409,8 @@ public sealed class LumaBrakeController : IDisposable
         public StaticShadeDetector StaticShadeDetector { get; }
 
         public AdaptiveContentDimmingDetector AdaptiveDetector { get; }
+
+        public InactiveMonitorDimmingDetector InactiveDetector { get; }
 
         public EffectEnvelope Envelope { get; } = new();
 

@@ -17,4 +17,6 @@ public sealed record LumaBrakeSettings
     public StaticShadeOptions StaticShade { get; init; } = new();
 
     public AdaptiveContentOptions AdaptiveContent { get; init; } = new();
+
+    public InactiveMonitorOptions InactiveMonitor { get; init; } = new();
 }

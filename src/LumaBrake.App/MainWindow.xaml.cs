@@ -131,6 +131,7 @@ public partial class MainWindow : Window
         EffectReason.RepetitiveFlash => "Repetitive flash",
         EffectReason.Manual => "Manual dimming",
         EffectReason.StaticShade => "Static shade",
+        EffectReason.InactiveMonitor => "Inactive monitor",
         EffectReason.AdaptiveContent => "Adaptive content",
         _ => "None"
     };
