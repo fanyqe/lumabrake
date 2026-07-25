@@ -51,6 +51,7 @@ The local development machine can also use the user-local SDK installed at `%USE
 
 ```powershell
 dotnet run --project src/LumaBrake.App
+dotnet run --project src/LumaBrake.App -- --safe-mode
 ```
 
 The CLI currently manages startup settings:

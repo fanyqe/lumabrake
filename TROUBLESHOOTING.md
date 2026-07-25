@@ -4,6 +4,12 @@
 
 Press `Ctrl+Alt+Shift+L` or choose `Emergency disable` from the tray menu.
 
+To launch with overlays disabled and manual dimming cleared:
+
+```powershell
+dotnet run --project src/LumaBrake.App -- --safe-mode
+```
+
 To clear CLI-configured manual dimming:
 
 ```powershell
