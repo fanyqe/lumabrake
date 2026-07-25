@@ -26,7 +26,7 @@
 
 ## 0.4.0 - Localized Masking
 
-- Regional mask composition.
+- Initial tile regional mask composition.
 - Feathered region edges.
 - Full-screen fallback.
 

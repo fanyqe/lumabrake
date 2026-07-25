@@ -27,7 +27,7 @@ Each active monitor
   -> per-monitor RepetitiveFlashDetector
   -> per-monitor EffectEnvelope
   -> EffectComposer
-  -> matching click-through WPF overlay opacity
+  -> matching click-through WPF overlay global opacity / regional masks
 ```
 
 Raw frame buffers are scoped to one capture iteration and are not persisted.
@@ -68,7 +68,7 @@ Decision: calculate a small tile luminance summary for each analyzed frame and r
 
 Reason: p95 luminance can be high when a small region is bright, but a small bright object should not always trigger full-monitor dimming.
 
-Consequence: the first Phase 4 slice improves false-positive suppression for global dimming. Localized masks and richer scene-change diagnostics remain future work.
+Consequence: the first Phase 4 slice improves false-positive suppression for global dimming. Localized spike masks and richer scene-change diagnostics remain future work.
 
 ## ADR-0006: Repetitive Flash Temporal State
 
@@ -76,4 +76,12 @@ Decision: track per-tile bright/dark transitions inside a bounded time window an
 
 Reason: repetitive flashes are not the same as a single dark-to-bright spike; they require temporal transition counting and cooldown handling.
 
-Consequence: the first Phase 5 slice produces a global dimming response for detected repetitive flashes. Regional masks, red-flash detection, and merged affected-region rendering remain future work.
+Consequence: the first Phase 5 slice produced a global dimming response for detected repetitive flashes. Red-flash detection and richer diagnostics remain future work.
+
+## ADR-0007: Initial Localized Flash Masks
+
+Decision: when repetitive flashing affects a small tile area, carry the affected tile regions through `FlashEvent`, `EffectRequest`, `FinalEffectState`, and the renderer instead of converting the event into full-monitor dimming.
+
+Reason: a flashing advertisement, HUD element, or small preview should be dimmed locally without unnecessarily darkening the rest of the monitor.
+
+Consequence: Phase 6 now has a first working tile-mask path using one click-through overlay window per monitor. Broad flash coverage still falls back to global dimming, and feathered edges plus merged region smoothing remain future work.
