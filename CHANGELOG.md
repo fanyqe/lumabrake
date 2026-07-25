@@ -10,3 +10,4 @@
 - Added basic Phase 3 per-monitor capture, detector state, diagnostics, and overlay windows.
 - Added tile-aware spike suppression so small bright regions are less likely to trigger full-monitor dimming.
 - Added an initial tile-temporal Repetitive Flash Guard and wired it into the global dimming composer.
+- Added a CLI diagnostics export package that avoids screenshots and raw screen content.

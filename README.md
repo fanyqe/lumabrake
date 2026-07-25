@@ -61,6 +61,7 @@ dotnet run --project src/LumaBrake.Cli -- disable
 dotnet run --project src/LumaBrake.Cli -- safe-mode
 dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
+dotnet run --project src/LumaBrake.Cli -- diagnostics export
 ```
 
 ## Safety

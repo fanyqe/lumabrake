@@ -31,3 +31,9 @@ dotnet run --project src/LumaBrake.Cli -- capture-test
 ```powershell
 dotnet run --project src/LumaBrake.Cli -- monitor list
 ```
+
+## Diagnostics Package
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- diagnostics export
+```
