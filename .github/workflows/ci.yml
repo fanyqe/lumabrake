@@ -27,3 +27,40 @@ jobs:
 
       - name: Test
         run: dotnet test LumaBrake.sln --configuration Release --no-build
+
+      - name: Publish portable package
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          $portableRoot = Join-Path $artifactRoot "portable\LumaBrake-win-x64"
+          New-Item -ItemType Directory -Force $portableRoot | Out-Null
+
+          dotnet publish src\LumaBrake.App\LumaBrake.App.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained false `
+            --output $portableRoot
+
+          dotnet publish src\LumaBrake.Cli\LumaBrake.Cli.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained false `
+            --output $portableRoot
+
+          Copy-Item README.md, LICENSE, PRIVACY.md, SECURITY.md -Destination $portableRoot
+
+          $zipPath = Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip"
+          Compress-Archive -Path (Join-Path $portableRoot "*") -DestinationPath $zipPath -Force
+
+          $hash = Get-FileHash $zipPath -Algorithm SHA256
+          "$($hash.Hash)  LumaBrake-win-x64-portable.zip" |
+            Set-Content (Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip.sha256") -Encoding ascii
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LumaBrake-win-x64-portable
+          path: |
+            artifacts/LumaBrake-win-x64-portable.zip
+            artifacts/LumaBrake-win-x64-portable.zip.sha256
+          if-no-files-found: error

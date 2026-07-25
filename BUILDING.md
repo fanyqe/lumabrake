@@ -14,6 +14,17 @@ dotnet build LumaBrake.sln
 dotnet test LumaBrake.sln --no-build
 ```
 
+## Portable Package
+
+```powershell
+$artifactRoot = Join-Path $PWD "artifacts"
+$portableRoot = Join-Path $artifactRoot "portable\LumaBrake-win-x64"
+dotnet publish src\LumaBrake.App\LumaBrake.App.csproj --configuration Release --runtime win-x64 --self-contained false --output $portableRoot
+dotnet publish src\LumaBrake.Cli\LumaBrake.Cli.csproj --configuration Release --runtime win-x64 --self-contained false --output $portableRoot
+Compress-Archive -Path (Join-Path $portableRoot "*") -DestinationPath (Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip") -Force
+Get-FileHash (Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip") -Algorithm SHA256
+```
+
 ## Local SDK
 
 If the SDK is installed under the user profile, prepend it for the current shell:

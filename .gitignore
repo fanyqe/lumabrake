@@ -487,6 +487,7 @@ $RECYCLE.BIN/
 .codegraph/
 .hallmark/
 artifacts/
+**/artifacts/
 coverage/
 *.log
 
@@ -495,3 +496,4 @@ coverage/
 !src/LumaBrake.App/**
 src/LumaBrake.App/bin/
 src/LumaBrake.App/obj/
+src/**/artifacts/
