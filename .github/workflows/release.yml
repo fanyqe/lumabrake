@@ -1,0 +1,190 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, for example v0.1.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  package-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: release
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ inputs.tag }}"
+          } else {
+            $tag = $env:GITHUB_REF_NAME
+          }
+
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            throw "Release tag is required."
+          }
+
+          $tag = $tag.Trim()
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
+            throw "Release tag must match v0.1.0."
+          }
+
+          git fetch --force --tags origin
+          $tagObject = git rev-parse "$tag^{tag}" 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            throw "Release tag '$tag' must be an existing annotated tag."
+          }
+
+          $targetCommit = git rev-parse "$tag^{commit}" 2>$null
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($targetCommit)) {
+            throw "Release tag '$tag' does not resolve to a commit."
+          }
+
+          $targetCommit = $targetCommit.Trim()
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            git checkout --detach $targetCommit
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not check out release tag '$tag'."
+            }
+          }
+
+          $productVersion = $Matches[1]
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "product_version=$productVersion" >> $env:GITHUB_OUTPUT
+          "target_commit=$targetCommit" >> $env:GITHUB_OUTPUT
+
+      - name: Set up .NET 10 LTS
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Format
+        run: dotnet format LumaBrake.sln --verify-no-changes
+
+      - name: Build
+        run: dotnet build LumaBrake.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test LumaBrake.sln --configuration Release --no-build -- --filter-not-namespace LumaBrake.Performance.Tests --ignore-exit-code 8
+
+      - name: Performance smoke tests
+        shell: pwsh
+        run: .\scripts\test-performance-budgets.ps1 -Configuration Release -NoBuild
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Publish packages
+        shell: pwsh
+        env:
+          LUMABRAKE_SIGNING_CERTIFICATE_BASE64: ${{ secrets.LUMABRAKE_SIGNING_CERTIFICATE_BASE64 }}
+          LUMABRAKE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.LUMABRAKE_SIGNING_CERTIFICATE_PASSWORD }}
+          LUMABRAKE_SIGNING_TIMESTAMP_URL: ${{ vars.LUMABRAKE_SIGNING_TIMESTAMP_URL }}
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          $signingCertificatePath = ""
+
+          if (![string]::IsNullOrWhiteSpace($env:LUMABRAKE_SIGNING_CERTIFICATE_BASE64)) {
+            $signingCertificatePath = Join-Path $env:RUNNER_TEMP "lumabrake-signing.pfx"
+            [System.IO.File]::WriteAllBytes($signingCertificatePath, [Convert]::FromBase64String($env:LUMABRAKE_SIGNING_CERTIFICATE_BASE64))
+          }
+
+          .\scripts\package-installer.ps1 `
+            -ArtifactRoot $artifactRoot `
+            -ProductVersion "${{ steps.release.outputs.product_version }}" `
+            -SelfContained $true `
+            -SigningCertificatePath $signingCertificatePath `
+            -SigningCertificatePassword $env:LUMABRAKE_SIGNING_CERTIFICATE_PASSWORD `
+            -SigningTimestampUrl $env:LUMABRAKE_SIGNING_TIMESTAMP_URL
+
+      - name: Smoke portable package
+        shell: pwsh
+        run: |
+          $zipPath = Join-Path $PWD "artifacts\LumaBrake-win-x64-portable.zip"
+          $extractRoot = Join-Path $PWD "artifacts\portable-smoke-$env:GITHUB_RUN_ID"
+          $settingsRoot = Join-Path $env:TEMP "lumabrake-portable-settings-$env:GITHUB_RUN_ID"
+          .\scripts\test-portable-package.ps1 -PortableZipPath $zipPath -ExtractRoot $extractRoot -SettingsRoot $settingsRoot
+
+      - name: Smoke MSI extraction
+        shell: pwsh
+        run: |
+          $installerPath = Join-Path $PWD "artifacts\LumaBrake-win-x64-setup.msi"
+          $extractRoot = Join-Path $PWD "artifacts\msi-extract"
+          .\scripts\test-installer-extract.ps1 -InstallerPath $installerPath -ExtractRoot $extractRoot
+
+      - name: Smoke MSI install and uninstall
+        shell: pwsh
+        run: |
+          $installerPath = Join-Path $PWD "artifacts\LumaBrake-win-x64-setup.msi"
+          $installRoot = Join-Path $env:TEMP "lumabrake-msi-install-$env:GITHUB_RUN_ID"
+          $logRoot = Join-Path $PWD "artifacts\msi-logs"
+          .\scripts\test-installer-install.ps1 -InstallerPath $installerPath -InstallRoot $installRoot -LogRoot $logRoot
+
+      - name: Upload installer diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: LumaBrake-installer-diagnostics
+          path: artifacts/msi-logs/*.log
+          if-no-files-found: ignore
+
+      - name: Generate SBOM
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          New-Item -ItemType Directory -Force $artifactRoot | Out-Null
+
+          dotnet dotnet-CycloneDX LumaBrake.sln `
+            --output $artifactRoot `
+            --filename "LumaBrake.cdx.json" `
+            --output-format Json `
+            --exclude-test-projects `
+            --set-name "LumaBrake" `
+            --set-version "${{ steps.release.outputs.product_version }}"
+
+      - name: Verify release artifacts
+        shell: pwsh
+        env:
+          LUMABRAKE_SIGNING_CERTIFICATE_BASE64: ${{ secrets.LUMABRAKE_SIGNING_CERTIFICATE_BASE64 }}
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          $verifyArgs = @{
+            ArtifactRoot = $artifactRoot
+            ProductVersion = "${{ steps.release.outputs.product_version }}"
+          }
+
+          if (![string]::IsNullOrWhiteSpace($env:LUMABRAKE_SIGNING_CERTIFICATE_BASE64)) {
+            $verifyArgs.RequireAuthenticodeSignature = $true
+          }
+
+          .\scripts\test-release-artifacts.ps1 @verifyArgs
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ steps.release.outputs.tag }}"
+          $zip = "artifacts\LumaBrake-win-x64-portable.zip"
+          $zipChecksum = "artifacts\LumaBrake-win-x64-portable.zip.sha256"
+          $installer = "artifacts\LumaBrake-win-x64-setup.msi"
+          $installerChecksum = "artifacts\LumaBrake-win-x64-setup.msi.sha256"
+          $sbom = "artifacts\LumaBrake.cdx.json"
+
+          gh release create $tag $zip $zipChecksum $installer $installerChecksum $sbom --verify-tag --title $tag --generate-notes

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 2,
+  "enabled": true,
+  "userMaximumOpacity": 0.64,
+  "manualDimmingOpacity": 0,
+  "spikeGuard": {
+    "warmupSamples": 8,
+    "baselineWindowSamples": 20,
+    "minimumActivationLuminance": 0.28,
+    "absoluteIncreaseThreshold": 0.18,
+    "relativeIncreaseThreshold": 1.85,
+    "brightPixelRatioThreshold": 0.18,
+    "cooldown": "00:00:00.9000000",
+    "maximumOpacity": 0.58,
+    "hold": "00:00:00.2200000",
+    "release": "00:00:00.9000000"
+  },
+  "flashGuard": {
+    "window": "00:00:01.2000000",
+    "minimumTransitions": 4,
+    "brightTileAverageThreshold": 0.62,
+    "brightTilePixelRatioThreshold": 0.35,
+    "darkTileAverageThreshold": 0.18,
+    "minimumTransitionDelta": 0.34,
+    "minimumAffectedTileRatio": 0.03,
+    "redFlashDetectionEnabled": true,
+    "redDominanceThreshold": 0.35,
+    "redDominantPixelRatioThreshold": 0.35,
+    "cooldown": "00:00:00.6500000",
+    "maximumOpacity": 0.62,
+    "hold": "00:00:00.3200000",
+    "release": "00:00:00.9500000"
+  },
+  "staticShade": {
+    "enabled": true,
+    "minimumStaticDuration": "00:00:30",
+    "fullOpacityDuration": "00:03:00",
+    "maximumFrameGap": "00:00:02",
+    "brightTileAverageThreshold": 0.62,
+    "brightTilePercentile95Threshold": 0.72,
+    "brightTilePixelRatioThreshold": 0.35,
+    "maximumAverageDelta": 0.025,
+    "minimumAffectedTileRatio": 0.005,
+    "maximumAffectedTileRatio": 0.45,
+    "minimumExposureScore": 0.18,
+    "exposureLuminanceWeight": 0.45,
+    "exposureBrightPixelWeight": 0.25,
+    "exposureDurationWeight": 0.3,
+    "baseOpacity": 0.1,
+    "maximumOpacity": 0.32,
+    "hold": "00:00:00.5000000",
+    "release": "00:00:01.2000000"
+  },
+  "hardwareBrightness": {
+    "enabled": false,
+    "allowWrites": false,
+    "minimumReadInterval": "00:00:05",
+    "minimumWriteInterval": "00:00:10",
+    "blacklistedDisplayDeviceNames": []
+  },
+  "startupRestoration": {
+    "enabled": true,
+    "applySchedules": true,
+    "hardwareBrightness": {
+      "enabled": false,
+      "displayDeviceName": "",
+      "physicalMonitorIndex": 0,
+      "brightness": 100,
+      "useSoftwareFallback": false
+    }
+  },
+  "applicationRules": {
+    "enabled": true,
+    "entries": [
+      {
+        "id": "video-player",
+        "name": "Video Player",
+        "enabled": true,
+        "processName": "vlc",
+        "windowTitleContains": "Video",
+        "excludeAutomaticEffects": true
+      }
+    ]
+  },
+  "focusDimming": {
+    "enabled": false,
+    "opacity": 0.16,
+    "hold": "00:00:00.1500000",
+    "release": "00:00:00.5000000"
+  },
+  "monitorTints": {
+    "entries": [
+      {
+        "monitorId": "\\\\.\\DISPLAY2",
+        "tint": {
+          "enabled": true,
+          "red": 255,
+          "green": 244,
+          "blue": 230,
+          "opacity": 0.18
+        }
+      }
+    ]
+  },
+  "schedules": {
+    "enabled": true,
+    "entries": [
+      {
+        "id": "work",
+        "name": "Work Hours",
+        "enabled": true,
+        "dayMask": 62,
+        "startMinuteOfDay": 540,
+        "endMinuteOfDay": 1020,
+        "manualDimmingOpacity": 0.18,
+        "hardwareBrightness": {
+          "enabled": true,
+          "displayDeviceName": "\\\\.\\DISPLAY2",
+          "physicalMonitorIndex": 0,
+          "brightness": 70,
+          "useSoftwareFallback": true
+        },
+        "tint": {
+          "enabled": true,
+          "red": 255,
+          "green": 244,
+          "blue": 230,
+          "opacity": 0.08
+        }
+      }
+    ]
+  },
+  "profiles": {
+    "entries": [
+      {
+        "id": "evening",
+        "name": "Evening",
+        "userMaximumOpacity": 0.64,
+        "manualDimmingOpacity": 0.25,
+        "tint": {
+          "enabled": true,
+          "red": 255,
+          "green": 214,
+          "blue": 170,
+          "opacity": 0.1
+        },
+        "monitorTints": {
+          "entries": [
+            {
+              "monitorId": "\\\\.\\DISPLAY2",
+              "tint": {
+                "enabled": true,
+                "red": 255,
+                "green": 244,
+                "blue": 230,
+                "opacity": 0.18
+              }
+            }
+          ]
+        },
+        "focusDimming": {
+          "enabled": true,
+          "opacity": 0.2,
+          "hold": "00:00:00.1500000",
+          "release": "00:00:00.5000000"
+        },
+        "hardwareBrightness": {
+          "enabled": true,
+          "displayDeviceName": "\\\\.\\DISPLAY2",
+          "physicalMonitorIndex": 0,
+          "brightness": 70,
+          "useSoftwareFallback": true
+        }
+      }
+    ]
+  }
+}

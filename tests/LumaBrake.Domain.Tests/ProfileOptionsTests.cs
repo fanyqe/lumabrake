@@ -1,0 +1,123 @@
+using LumaBrake.Domain.Analysis;
+using LumaBrake.Domain.Color;
+using LumaBrake.Domain.Effects;
+using LumaBrake.Domain.Profiles;
+
+namespace LumaBrake.Domain.Tests;
+
+public sealed class ProfileOptionsTests
+{
+    [Fact]
+    public void ProfileClamp_NormalizesValues()
+    {
+        var profile = new LumaBrakeProfile
+        {
+            Id = "  work  ",
+            Name = "  Work  ",
+            UserMaximumOpacity = 2,
+            ManualDimmingOpacity = -1,
+            MonitorManualDimming = new MonitorManualDimmingOptions
+            {
+                Entries = [new MonitorManualDimmingOverride { MonitorId = "  monitor-1  ", Opacity = 2 }]
+            },
+            ProtectionTuning = new ProtectionTuningOptions
+            {
+                Strength = (ProtectionStrengthPreset)99,
+                Response = (ProtectionResponsePreset)99,
+                LocalProtection = (LocalProtectionPreset)99,
+                LocalMaskFit = (LocalMaskFitPreset)99,
+                WhitePageProtection = (WhitePageProtectionPreset)99,
+                StaticShadeProfile = (StaticShadePreset)99
+            },
+            Tint = new TintOptions { Enabled = true, Red = 255, Green = 214, Blue = 244, Opacity = 3 },
+            NightColor = new NightColorOptions
+            {
+                Enabled = true,
+                ManualTemperatureKelvin = 100,
+                Brightness = 2,
+                TintStrength = 2
+            },
+            MonitorTints = new MonitorTintOptions
+            {
+                Entries =
+                [
+                    new MonitorTintOverride
+                    {
+                        MonitorId = "  monitor-1  ",
+                        Tint = new TintOptions { Enabled = true, Opacity = 2 }
+                    }
+                ]
+            },
+            FocusDimming = new FocusDimmingOptions { Enabled = true, Opacity = 2 }
+        }.Clamp();
+
+        Assert.Equal("work", profile.Id);
+        Assert.Equal("Work", profile.Name);
+        Assert.Equal(0.92, profile.UserMaximumOpacity, precision: 12);
+        Assert.Equal(0, profile.ManualDimmingOpacity, precision: 12);
+        var monitorManualDimming = Assert.Single(profile.MonitorManualDimming.Entries);
+        Assert.Equal("monitor-1", monitorManualDimming.MonitorId);
+        Assert.Equal(0.90, monitorManualDimming.Opacity, precision: 12);
+        Assert.Equal(ProtectionStrengthPreset.Balanced, profile.ProtectionTuning.Strength);
+        Assert.Equal(ProtectionResponsePreset.Balanced, profile.ProtectionTuning.Response);
+        Assert.Equal(LocalProtectionPreset.Balanced, profile.ProtectionTuning.LocalProtection);
+        Assert.Equal(LocalMaskFitPreset.Precise, profile.ProtectionTuning.LocalMaskFit);
+        Assert.Equal(WhitePageProtectionPreset.Normal, profile.ProtectionTuning.WhitePageProtection);
+        Assert.Equal(StaticShadePreset.OledBalanced, profile.ProtectionTuning.StaticShadeProfile);
+        Assert.True(profile.Tint.Enabled);
+        Assert.Equal(255, profile.Tint.Red);
+        Assert.Equal(214, profile.Tint.Green);
+        Assert.Equal(0.60, profile.Tint.Opacity, precision: 12);
+        Assert.True(profile.NightColor.Enabled);
+        Assert.Equal(1000, profile.NightColor.ManualTemperatureKelvin);
+        Assert.Equal(1, profile.NightColor.Brightness, precision: 12);
+        Assert.Equal(1, profile.NightColor.TintStrength, precision: 12);
+        var monitorTint = Assert.Single(profile.MonitorTints.Entries);
+        Assert.Equal("monitor-1", monitorTint.MonitorId);
+        Assert.Equal(0.60, monitorTint.Tint.Opacity, precision: 12);
+        Assert.True(profile.FocusDimming.Enabled);
+        Assert.Equal(0.60, profile.FocusDimming.Opacity, precision: 12);
+    }
+
+    [Fact]
+    public void Upsert_ReplacesExistingProfileCaseInsensitively()
+    {
+        var options = new ProfileOptions()
+            .Upsert(new LumaBrakeProfile { Id = "work", Name = "Old", ManualDimmingOpacity = 0.10 })
+            .Upsert(new LumaBrakeProfile { Id = "WORK", Name = "New", ManualDimmingOpacity = 0.20 });
+
+        var profile = Assert.Single(options.Clamp().Entries);
+        Assert.Equal("WORK", profile.Id);
+        Assert.Equal("New", profile.Name);
+        Assert.Equal(0.20, profile.ManualDimmingOpacity, precision: 12);
+        Assert.Equal("New", options.Find("work")?.Name);
+    }
+
+    [Fact]
+    public void Remove_DropsMatchingProfileOnly()
+    {
+        var options = new ProfileOptions
+        {
+            Entries =
+            [
+                new LumaBrakeProfile { Id = "work" },
+                new LumaBrakeProfile { Id = "night" }
+            ]
+        }.Remove("WORK");
+
+        var profile = Assert.Single(options.Entries);
+        Assert.Equal("night", profile.Id);
+    }
+
+    [Fact]
+    public void FindAndRemove_IgnoreBlankIds()
+    {
+        var options = new ProfileOptions
+        {
+            Entries = [new LumaBrakeProfile { Id = "night" }]
+        };
+
+        Assert.Null(options.Find(" "));
+        Assert.Single(options.Remove(" ").Entries);
+    }
+}

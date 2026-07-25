@@ -1,0 +1,129 @@
+# Changelog
+
+## Unreleased
+
+- Added a default-off Night Color comfort layer with Windows display gamma ramp color-temperature control, overlay fallback, editable location, color strength, manual Kelvin, custom schedule, sunrise/sunset schedule, brightness, transition, full-screen pause, pause/resume, dashboard controls, tray pause/resume, CLI commands, profile persistence, and app-rule exclusions.
+- Changed recoverable capture-failure fallback so Night Color can keep rendering without content analysis while sustained capture failures still clear manual/scheduled analysis-dependent overlay state.
+- Changed Repetitive Flash Guard scroll tracking to keep localized flash history only when the shifted region's surrounding content still matches, preventing newly arrived content from inheriting an old flash rhythm.
+- Changed StaticShade scroll tracking to verify shifted tile context before preserving exposure history, so new bright content at a moved screen position does not inherit the previous region's static duration.
+- Changed StaticShade motion tracking to preserve static-region history during repeated feed/list scrolling when tile correlation is motion-likely but not fully reliable.
+- Added regional mask coordinates to runtime diagnostics so support packages can show which effect placed each local mask without storing screen content.
+- Changed regional overlay reuse to match masks by nearby geometry instead of list position, preventing distant local masks from visually sliding or snapping across the screen during scrolling.
+- Changed localized flash/spike tracking to compensate tile-correlated scroll motion and smoothed regional overlay movement so local masks no longer jump between screen positions during normal page scrolling.
+- Added tile-correlation motion tracking so StaticShade can carry local masks with scrolled content and clear obsolete masks after scene changes or resizes.
+- Changed local mask fitting to use detected signal bounds across connected bright surfaces, reducing oversized masks and scroll-time mask hopping.
+- Added a `Local mask fit` tuning choice for precise, balanced, or expanded regional protection.
+- Added user-facing protection tuning choices for strength, response speed, local masks, white-page dimming, and static-surface profiles across dashboard, settings, profiles, and CLI.
+- Changed StaticShade to reacquire local masks quickly after recent local protection so scrolling bright avatars or cards does not wait for the full initial static duration again.
+- Changed StaticShade local mask hold/release timing so local protection fades out quickly when switching tabs or leaving a bright static region.
+- Changed repetitive flash and brightness spike classification so scroll on broad bright pages is treated as persistent bright content instead of a new flash/spike event.
+- Changed StaticShade timing defaults and schema migration so readable white surfaces can receive local protection after about two seconds instead of waiting for the old long OLED-only timing.
+- Changed localized protection defaults to avoid normal scroll and fast-moving content: localized spike masks are off by default, localized flash and StaticShade masks require regional confirmation, and connected bright surfaces are expanded before masking.
+- Changed adaptive content dimming so broad bright pages with moderate average luminance can trigger persistent dimming, and borderline bright frames no longer reset dimming like a flash.
+- Changed the luminance analyzer to use a finer `32 x 18` tile grid and carry bright/red signal bounds for more precise local masks.
+- Changed repetitive flash detection to support early localized activation, neutral-to-bright transitions, and signal-bound regional masks.
+- Added localized brightness-spike protection so sudden small bright regions can be detected from tile luminance and bright-pixel ratio jumps, then masked without full-screen dimming.
+- Changed Focus Dimming to stay stable during short near-empty capture anomalies instead of dropping and reappearing with the analysis pipeline.
+- Changed multi-monitor analysis to capture and analyze monitors concurrently, with coalesced overlay updates so stale effects are dropped before rendering.
+- Changed local installer packaging to regenerate the CycloneDX SBOM with the requested release version.
+- Added regression coverage for default localized flash detection, localized spike masks, static signal-bound masks, concurrent monitor capture, and overlay effect coalescing.
+- Changed the runtime analysis loop to run an immediate first pass and a faster 20 Hz cadence for lower perceived protection latency.
+- Changed default responsiveness for spike, flash, and adaptive dimming so abrupt bright transitions and repeated flashes are handled with fewer warmup/transition frames.
+- Changed dashboard live monitor rendering to coalesce snapshots asynchronously so an open dashboard cannot block the protection loop.
+- Changed transient capture failure handling to preserve the last safe overlay through brief one-frame capture misses and clear only after sustained failures.
+- Added controller-level responsiveness and stability regression tests for spike, flash, adaptive dimming, and transient capture failures.
+- Added a repeatable packaged field-smoke script for real-machine monitor, capture, hardware-read, diagnostics, startup, and hardware-write safety evidence.
+- Added CI and release workflow format verification before build and packaging.
+- Initialized the .NET 10 LTS solution.
+- Added Phase 2 Brightness Spike Guard vertical slice.
+- Added WPF dashboard, tray icon, click-through overlay, emergency hotkey, and CLI settings commands.
+- Added deterministic luminance, spike detector, effect composition, and settings recovery tests.
+- Added Windows monitor enumeration and `lumabrake monitor list` CLI smoke command.
+- Added basic Phase 3 per-monitor capture, detector state, diagnostics, and overlay windows.
+- Added tile-aware spike suppression so small bright regions are less likely to trigger full-monitor dimming.
+- Added an initial tile-temporal Repetitive Flash Guard and wired it into the global dimming composer.
+- Added a CLI diagnostics export package that avoids screenshots and raw screen content.
+- Added global manual software dimming in the dashboard and CLI.
+- Added per-monitor manual software dimming in the dashboard and CLI with profile, Safe Mode, emergency-disable, and startup-restoration coverage.
+- Added an initial versioned settings schema migration gate.
+- Added a shared Safe Mode policy and `--safe-mode` app startup argument.
+- Added initial localized flash masks for small repetitive flashing tile regions.
+- Added an initial StaticShade detector for persistent bright tile regions.
+- Added initial adaptive content dimming for persistent bright scenes.
+- Added initial inactive-monitor dimming for unchanged non-primary displays.
+- Added a basic CLI-controlled tint overlay.
+- Added read-only DDC/CI hardware capability detection through the CLI.
+- Added read-only hardware brightness readings through the CLI.
+- Added hardware brightness policy defaults and display-device blacklist commands.
+- Added explicit software dimming fallback for failed one-shot hardware brightness writes.
+- Added versioned schedule, startup-restoration, and profile hardware-brightness targets without enabling runtime DDC writes.
+- Changed startup restoration to apply an active schedule hardware-brightness target while keeping the stored startup target when no schedule target is active.
+- Added a startup hardware-brightness restorer that attempts the effective target once and stores software fallback when configured.
+- Added a low-frequency runtime hardware-brightness coordinator for changed schedule/profile targets with durable write-attempt tracking and opt-in software fallback.
+- Added initial CLI schedules and startup restoration for software dimming and tint.
+- Added runtime scheduled dimming as a low-priority effect.
+- Added guarded one-shot hardware brightness write commands with opt-in settings, per-command confirmation, physical monitor targeting, blacklist checks, safe-mode clearing, and durable write interval state.
+- Added default-disabled focus dimming that uses the foreground window's monitor to dim other monitors at low priority.
+- Added CLI software profiles for saving, listing, applying, and removing reusable dimming, tint, and focus settings.
+- Added editable CLI schedules with named set, remove, enable-entry, disable-entry, and readable day-mask output.
+- Added initial per-monitor tint overrides through the CLI with schedule tint precedence.
+- Added red-dominant repetitive flash detection using tile-level red-dominance metrics.
+- Added red-dominant flash counters to pipeline diagnostics and the dashboard event display.
+- Added CycloneDX SBOM generation to the CI portable artifact.
+- Added periodic runtime monitor topology refresh for basic add, remove, and display-bounds updates.
+- Changed monitor descriptor updates to reset automatic detector state and clear stale overlay effects before rendering with the new geometry.
+- Added StaticShade exposure scoring and CLI presets for OLED, HUD, office, and disabled modes.
+- Added padded regional mask merging and feathered overlay edges for localized dimming.
+- Added CLI-managed current-user Windows startup registration with background tray launch.
+- Added dashboard controls for current-user Windows startup registration.
+- Changed the CI portable ZIP to self-contained `win-x64` publishing.
+- Added tag-triggered GitHub Release automation for portable ZIP, checksum, and SBOM assets.
+- Added an initial WiX MSI installer with checksums to CI and release packaging.
+- Added dashboard controls for protection modules, StaticShade presets, focus dimming, and tint.
+- Added CI smoke testing for MSI install and uninstall.
+- Added HDR/advanced-color monitor detection to CLI monitor listing, dashboard status, and diagnostics.
+- Added dashboard and tray diagnostics export.
+- Added dashboard controls for saving, applying, and removing software profiles.
+- Added filesystem path redaction to diagnostics export packages.
+- Added all-monitor capture smoke output with capture and analysis timing.
+- Added release artifact checksum, portable ZIP, and SBOM verification before upload.
+- Added optional Authenticode signing support for release payloads and the MSI when signing certificate secrets are configured.
+- Added a single-instance guard so a second app launch asks the existing process to show the dashboard instead of creating another tray icon or overlay set.
+- Hardened hardware brightness write-attempt state key normalization and malformed-state handling.
+- Added foreground application rules that can suppress automatic effects for matching processes or window titles.
+- Added CLI management commands for foreground application rules.
+- Added dashboard controls for saving, enabling, removing, and clearing foreground application rules.
+- Changed transient capture/render loop failures to clear active effects and retry without disabling the runtime.
+- Added runtime recovery counters to snapshots and the dashboard monitor status.
+- Changed active HDR/advanced-color monitors to suppress automatic effects while preserving manual dimming, schedules, and tint.
+- Added near-empty capture handling so protected or exclusive content samples do not poison automatic detector state.
+- Hardened transient render recovery so overlay cleanup failures do not stop the runtime loop.
+- Kept MSI installs from creating per-user Windows startup entries; startup remains managed by the dashboard and CLI.
+- Changed the MSI to install per-user by default so clean install/uninstall smoke tests do not require administrator rights.
+- Passed release versions into portable app and CLI binary metadata and verified artifact/SBOM version alignment.
+- Clarified release installation, checksum, startup, and signing expectations in user-facing docs.
+- Fixed packaged app startup by binding overlay window-style imports to the exported Unicode user32 entry points.
+- Updated test projects to xUnit v3, Microsoft Testing Platform v2, and current test SDK/collector packages.
+- Added tile-activity motion checks so inactive-monitor dimming does not trigger on stable-brightness video-like movement.
+- Fixed a race where emergency disable could be followed by one stale scheduled overlay update.
+- Added CI-covered synthetic performance smoke tests for analyzer, detector, composer, and retained-state regressions.
+- Added runtime pipeline snapshots to dashboard and tray diagnostics exports without including screen content.
+- Hardened overlay cleanup so emergency disable and disabled runtime paths stay safe when overlay hiding fails.
+- Restored inactive-monitor dimming immediately when foreground activity moves onto that monitor.
+- Restored inactive-monitor dimming immediately when the cursor enters that monitor.
+- Added Windows display-change notifications so monitor topology refreshes promptly after display reconnects or resolution changes.
+- Added recoverable overlay window recreation for render-surface update, hide, and dispose failures.
+- Isolated recoverable per-monitor capture failures so healthy monitors continue rendering and diagnostics report failed frame acquisition separately from near-empty sampling.
+- Added bounded profile JSON import/export commands with clamped imported values and CLI smoke coverage.
+- Handled recoverable monitor-enumeration failures by clearing stale pipelines and overlays while reporting failed detection.
+- Hardened manual release dispatch so it verifies an existing annotated release tag and builds the tagged commit.
+- Invalidated in-flight render work after monitor topology changes so stale automatic effects cannot return after a refresh reset.
+- Added broader CLI smoke coverage for settings-only visual, rule, schedule, startup-restoration, and override commands.
+- Added optional Authenticode signature verification to the release artifact gate when signing certificate secrets are configured.
+- Added CI smoke coverage that extracts the portable ZIP and runs the packaged self-contained CLI before upload.
+- Hardened settings and hardware-brightness state persistence with unique temporary files, write-through JSON writes, and non-overwriting corrupt-file quarantine.
+- Added explicit capture device-loss and overlay render-surface-loss recovery contracts with tests proving fail-closed monitor clearing and overlay window recreation.
+- Added packaged app startup smoke coverage for portable ZIP and MSI install validation using safe-mode background launch.
+- Hardened installer packaging so WiX build-state cache is cleared before each MSI build and stale payload files cannot be embedded.
+- Added noisy moving-background analysis fixtures for localized flash, StaticShade, and adaptive dimming stability coverage.
+- Added overlay extended-style coverage so click-through, non-activating, tool-window, layered, and capture-exclusion flags stay locked.

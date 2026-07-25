@@ -1,0 +1,108 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up .NET 10 LTS
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Format
+        run: dotnet format LumaBrake.sln --verify-no-changes
+
+      - name: Build
+        run: dotnet build LumaBrake.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test LumaBrake.sln --configuration Release --no-build -- --filter-not-namespace LumaBrake.Performance.Tests --ignore-exit-code 8
+
+      - name: Performance smoke tests
+        shell: pwsh
+        run: .\scripts\test-performance-budgets.ps1 -Configuration Release -NoBuild
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Publish packages
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          .\scripts\package-installer.ps1 -ArtifactRoot $artifactRoot -ProductVersion "0.0.0" -SelfContained $true
+
+      - name: Smoke portable package
+        shell: pwsh
+        run: |
+          $zipPath = Join-Path $PWD "artifacts\LumaBrake-win-x64-portable.zip"
+          $extractRoot = Join-Path $PWD "artifacts\portable-smoke-$env:GITHUB_RUN_ID"
+          $settingsRoot = Join-Path $env:TEMP "lumabrake-portable-settings-$env:GITHUB_RUN_ID"
+          .\scripts\test-portable-package.ps1 -PortableZipPath $zipPath -ExtractRoot $extractRoot -SettingsRoot $settingsRoot
+
+      - name: Smoke MSI extraction
+        shell: pwsh
+        run: |
+          $installerPath = Join-Path $PWD "artifacts\LumaBrake-win-x64-setup.msi"
+          $extractRoot = Join-Path $PWD "artifacts\msi-extract"
+          .\scripts\test-installer-extract.ps1 -InstallerPath $installerPath -ExtractRoot $extractRoot
+
+      - name: Smoke MSI install and uninstall
+        shell: pwsh
+        run: |
+          $installerPath = Join-Path $PWD "artifacts\LumaBrake-win-x64-setup.msi"
+          $installRoot = Join-Path $env:TEMP "lumabrake-msi-install-$env:GITHUB_RUN_ID"
+          $logRoot = Join-Path $PWD "artifacts\msi-logs"
+          .\scripts\test-installer-install.ps1 -InstallerPath $installerPath -InstallRoot $installRoot -LogRoot $logRoot
+
+      - name: Upload installer diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: LumaBrake-installer-diagnostics
+          path: artifacts/msi-logs/*.log
+          if-no-files-found: ignore
+
+      - name: Generate SBOM
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          New-Item -ItemType Directory -Force $artifactRoot | Out-Null
+
+          dotnet dotnet-CycloneDX LumaBrake.sln `
+            --output $artifactRoot `
+            --filename "LumaBrake.cdx.json" `
+            --output-format Json `
+            --exclude-test-projects `
+            --set-name "LumaBrake" `
+            --set-version "0.0.0"
+
+      - name: Verify release artifacts
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          .\scripts\test-release-artifacts.ps1 -ArtifactRoot $artifactRoot -ProductVersion "0.0.0"
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: LumaBrake-win-x64-release
+          path: |
+            artifacts/LumaBrake-win-x64-portable.zip
+            artifacts/LumaBrake-win-x64-portable.zip.sha256
+            artifacts/LumaBrake-win-x64-setup.msi
+            artifacts/LumaBrake-win-x64-setup.msi.sha256
+            artifacts/LumaBrake.cdx.json
+          if-no-files-found: error
