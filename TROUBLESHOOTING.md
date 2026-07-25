@@ -1,0 +1,26 @@
+# Troubleshooting
+
+## Emergency Disable
+
+Press `Ctrl+Alt+Shift+L` or choose `Emergency disable` from the tray menu.
+
+## Overlay Does Not Appear
+
+- Confirm the app is enabled.
+- Confirm the active content actually crosses spike thresholds.
+- Protected or exclusive full-screen content may limit capture.
+
+## Build Uses The Wrong SDK
+
+Run:
+
+```powershell
+$env:PATH = "$env:USERPROFILE\.dotnet;$env:PATH"
+dotnet --list-sdks
+```
+
+## Capture Smoke Test
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- capture-test
+```
