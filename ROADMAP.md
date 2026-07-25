@@ -38,7 +38,7 @@
 
 ## 0.6.0 - Adaptive and Inactive Dimming
 
-- Smooth content dimming.
+- Initial smooth content dimming.
 - Inactive monitor dimming.
 - Video/activity exceptions.
 

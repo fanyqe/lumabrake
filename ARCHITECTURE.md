@@ -26,6 +26,7 @@ Each active monitor
   -> broad bright-tile transition check
   -> per-monitor RepetitiveFlashDetector
   -> per-monitor StaticShadeDetector
+  -> per-monitor AdaptiveContentDimmingDetector
   -> per-monitor EffectEnvelope
   -> EffectComposer
   -> matching click-through WPF overlay global opacity / regional masks
@@ -94,3 +95,11 @@ Decision: track only per-tile luminance averages, bright-pixel ratios, and stati
 Reason: persistent bright UI regions can be detected deterministically from bounded tile metrics while preserving the privacy rule that screen content is not persisted.
 
 Consequence: Phase 7 has an initial localized dimming path for small bright static regions. Motion scoring, accumulated exposure scoring, OLED profiles, and full-screen intent detection remain future work.
+
+## ADR-0009: Initial Adaptive Content Dimming
+
+Decision: emit a low-priority global `AdaptiveContent` effect only after bright scene metrics remain above thresholds for a minimum duration.
+
+Reason: persistent white or bright interfaces benefit from gentle dimming, but short flashes and sudden transitions are already handled by higher-priority flash and spike guards.
+
+Consequence: Phase 8 has a first smooth bright-scene dimming path with duration, dead-zone, smoothing, and frame-gap reset. Inactive-monitor dimming, time-of-day profiles, and application-specific behavior remain future work.
