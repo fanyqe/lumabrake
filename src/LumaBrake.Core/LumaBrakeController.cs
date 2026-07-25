@@ -2,6 +2,7 @@ using LumaBrake.Analysis.Detection;
 using LumaBrake.Analysis.Frames;
 using LumaBrake.Capture;
 using LumaBrake.Diagnostics;
+using LumaBrake.Domain.Monitors;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Effects.Composition;
 using LumaBrake.Persistence;
@@ -17,6 +18,7 @@ public sealed class LumaBrakeController : IDisposable
     private readonly BrightnessSpikeDetector _detector;
     private readonly EffectEnvelope _envelope = new();
     private readonly EffectComposer _composer = new();
+    private readonly IMonitorCatalog _monitorCatalog;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loop;
@@ -27,13 +29,17 @@ public sealed class LumaBrakeController : IDisposable
     private double _lastP95;
     private double _lastOpacity;
     private EffectReason _lastReason = EffectReason.None;
+    private IReadOnlyList<MonitorDescriptor> _monitors = Array.Empty<MonitorDescriptor>();
+    private string _monitorStatus = "Monitor list has not been refreshed.";
 
-    public LumaBrakeController(IFrameCapture capture, IOverlayRenderer overlay, LumaBrakeSettings settings)
+    public LumaBrakeController(IFrameCapture capture, IOverlayRenderer overlay, LumaBrakeSettings settings, IMonitorCatalog monitorCatalog)
     {
         _capture = capture;
         _overlay = overlay;
         Settings = settings;
         _detector = new BrightnessSpikeDetector(settings.SpikeGuard);
+        _monitorCatalog = monitorCatalog;
+        RefreshMonitors();
     }
 
     public LumaBrakeSettings Settings { get; private set; }
@@ -88,6 +94,9 @@ public sealed class LumaBrakeController : IDisposable
     {
         lock (_gate)
         {
+            var activeMonitor = _monitors.FirstOrDefault(monitor => monitor.IsPrimary)
+                ?? _monitors.FirstOrDefault();
+
             return new PipelineSnapshot(
                 DateTimeOffset.UtcNow,
                 Settings.Enabled,
@@ -95,9 +104,44 @@ public sealed class LumaBrakeController : IDisposable
                 _lastP95,
                 _lastOpacity,
                 _lastReason,
+                activeMonitor?.DeviceName ?? "unknown",
+                _monitors.Count,
+                _monitorStatus,
                 _framesAnalyzed,
                 _spikeEvents);
         }
+    }
+
+    public IReadOnlyList<MonitorDescriptor> Monitors()
+    {
+        lock (_gate)
+        {
+            return _monitors.ToArray();
+        }
+    }
+
+    public void RefreshMonitors()
+    {
+        IReadOnlyList<MonitorDescriptor> monitors;
+        string monitorStatus;
+        try
+        {
+            monitors = _monitorCatalog.GetMonitors();
+            monitorStatus = $"Detected {monitors.Count} monitor(s).";
+        }
+        catch (InvalidOperationException)
+        {
+            monitors = Array.Empty<MonitorDescriptor>();
+            monitorStatus = "Monitor detection failed.";
+        }
+
+        lock (_gate)
+        {
+            _monitors = monitors;
+            _monitorStatus = monitorStatus;
+        }
+
+        PublishSnapshot();
     }
 
     public void Dispose()

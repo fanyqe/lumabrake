@@ -22,7 +22,7 @@ public partial class App : System.Windows.Application
 
         var settings = _settingsStore.Load();
         var overlay = new OverlayWindow();
-        _controller = new LumaBrakeController(new GdiPrimaryMonitorCapture(), overlay, settings);
+        _controller = new LumaBrakeController(new GdiPrimaryMonitorCapture(), overlay, settings, new WindowsMonitorEnumerator());
         _controller.Start();
 
         _dashboard = new MainWindow(_controller, _settingsStore);

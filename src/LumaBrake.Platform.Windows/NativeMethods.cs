@@ -17,6 +17,9 @@ public static partial class NativeMethods
     public const int SrcCopy = 0x00CC0020;
     public const int DibRgbColors = 0;
     public const int BiRgb = 0;
+    public const uint MonitorinfofPrimary = 0x00000001;
+
+    public delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect lprcMonitor, IntPtr dwData);
 
     [LibraryImport("user32.dll", SetLastError = true)]
     public static partial IntPtr GetDC(IntPtr hWnd);
@@ -83,4 +86,24 @@ public static partial class NativeMethods
         out IntPtr ppvBits,
         IntPtr hSection,
         uint offset);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EnumDisplayMonitors(
+        IntPtr hdc,
+        IntPtr lprcClip,
+        MonitorEnumProc lpfnEnum,
+        IntPtr dwData);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfoEx lpmi);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EnumDisplayDevices(
+        string? lpDevice,
+        uint iDevNum,
+        ref DisplayDevice lpDisplayDevice,
+        uint dwFlags);
 }

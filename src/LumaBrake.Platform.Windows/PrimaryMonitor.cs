@@ -1,17 +1,16 @@
-using System.Windows;
+using LumaBrake.Domain.Monitors;
 
 namespace LumaBrake.Platform.Windows;
 
 public static class PrimaryMonitor
 {
-    private const int SmCxscreen = 0;
-    private const int SmCyscreen = 1;
-
-    public static Rect Bounds()
+    public static MonitorDescriptor Get()
     {
-        var width = NativeMethods.GetSystemMetrics(SmCxscreen);
-        var height = NativeMethods.GetSystemMetrics(SmCyscreen);
-
-        return new Rect(0, 0, width, height);
+        var monitors = new WindowsMonitorEnumerator().GetMonitors();
+        return monitors.FirstOrDefault(monitor => monitor.IsPrimary)
+            ?? monitors.FirstOrDefault()
+            ?? throw new InvalidOperationException("No active Windows monitor was found.");
     }
+
+    public static MonitorBounds Bounds() => Get().Bounds;
 }

@@ -9,5 +9,8 @@ public sealed record PipelineSnapshot(
     double Percentile95Luminance,
     double OverlayOpacity,
     EffectReason ActiveReason,
+    string ActiveMonitor,
+    int MonitorCount,
+    string MonitorStatus,
     long FramesAnalyzed,
     long SpikeEvents);

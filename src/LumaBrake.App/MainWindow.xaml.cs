@@ -71,6 +71,12 @@ public partial class MainWindow : Window
         FooterText.Text = "Settings saved.";
     }
 
+    private void RefreshMonitorsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        _controller.RefreshMonitors();
+        RenderSnapshot(_controller.Snapshot());
+    }
+
     private void MaximumOpacitySlider_OnValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (!IsInitialized)
@@ -91,6 +97,9 @@ public partial class MainWindow : Window
         OpacityText.Text = FormatPercent(snapshot.OverlayOpacity);
         EventsText.Text = snapshot.SpikeEvents.ToString("N0");
         MaximumOpacityText.Text = FormatPercent(MaximumOpacitySlider.Value);
+        MonitorText.Text = snapshot.MonitorCount == 0
+            ? snapshot.MonitorStatus
+            : $"{snapshot.ActiveMonitor}, 160 x 90 BGRA sample, {snapshot.MonitorStatus}";
     }
 
     private static string FormatPercent(double value) => $"{Math.Round(value * 100):0}%";

@@ -20,7 +20,8 @@ public sealed class GdiPrimaryMonitorCapture : IFrameCapture
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var bounds = PrimaryMonitor.Bounds();
+        var monitor = PrimaryMonitor.Get();
+        var bounds = monitor.Bounds;
         var screenDc = NativeMethods.GetDC(IntPtr.Zero);
         if (screenDc == IntPtr.Zero)
         {
@@ -74,10 +75,10 @@ public sealed class GdiPrimaryMonitorCapture : IFrameCapture
                 _analysisWidth,
                 _analysisHeight,
                 screenDc,
-                (int)bounds.X,
-                (int)bounds.Y,
-                (int)bounds.Width,
-                (int)bounds.Height,
+                bounds.Left,
+                bounds.Top,
+                bounds.Width,
+                bounds.Height,
                 NativeMethods.SrcCopy);
 
             if (!copied)
@@ -90,7 +91,7 @@ public sealed class GdiPrimaryMonitorCapture : IFrameCapture
 
             return new CapturedFrame(
                 buffer,
-                new FrameMetadata(DateTimeOffset.UtcNow, _analysisWidth, _analysisHeight, "PrimaryMonitorGDI"));
+                new FrameMetadata(DateTimeOffset.UtcNow, _analysisWidth, _analysisHeight, monitor.DeviceName));
         }
         finally
         {
