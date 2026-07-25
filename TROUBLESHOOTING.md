@@ -4,6 +4,12 @@
 
 Press `Ctrl+Alt+Shift+L` or choose `Emergency disable` from the tray menu.
 
+To clear CLI-configured manual dimming:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- dim off
+```
+
 ## Overlay Does Not Appear
 
 - Confirm the app is enabled.

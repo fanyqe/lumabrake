@@ -1,6 +1,7 @@
 {
   "enabled": true,
   "userMaximumOpacity": 0.64,
+  "manualDimmingOpacity": 0,
   "spikeGuard": {
     "warmupSamples": 8,
     "baselineWindowSamples": 20,

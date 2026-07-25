@@ -11,3 +11,4 @@
 - Added tile-aware spike suppression so small bright regions are less likely to trigger full-monitor dimming.
 - Added an initial tile-temporal Repetitive Flash Guard and wired it into the global dimming composer.
 - Added a CLI diagnostics export package that avoids screenshots and raw screen content.
+- Added global manual software dimming in the dashboard and CLI.

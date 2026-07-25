@@ -22,7 +22,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | --- | --- |
 | Brightness Spike Guard | Phase 4 tile-aware spike suppression in progress |
 | Multi-monitor capture and overlays | Basic Phase 3 pipeline implemented |
-| Manual software maximum dimming | Basic setting |
+| Manual software dimming | Basic global dimming implemented |
 | System tray controls | Implemented |
 | Emergency hotkey | Implemented |
 | Local deterministic luminance analysis | Implemented |
@@ -59,6 +59,7 @@ The CLI currently manages startup settings:
 dotnet run --project src/LumaBrake.Cli -- status
 dotnet run --project src/LumaBrake.Cli -- disable
 dotnet run --project src/LumaBrake.Cli -- safe-mode
+dotnet run --project src/LumaBrake.Cli -- dim 25
 dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
 dotnet run --project src/LumaBrake.Cli -- diagnostics export
