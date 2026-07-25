@@ -29,8 +29,8 @@ Each active monitor
   -> per-monitor AdaptiveContentDimmingDetector
   -> per-monitor InactiveMonitorDimmingDetector for non-primary displays
   -> per-monitor EffectEnvelope
-  -> EffectComposer
-  -> matching click-through WPF overlay global opacity / regional masks
+  -> EffectComposer with optional tint
+  -> matching click-through WPF overlay global opacity / regional masks / tint
 ```
 
 Raw frame buffers are scoped to one capture iteration and are not persisted.
@@ -112,3 +112,11 @@ Decision: dim only non-primary monitors when their analyzed luminance metrics st
 Reason: unchanged-frame detection is deterministic and available in the existing local analysis loop, while cursor/foreground-window attribution needs a separate Windows activity model.
 
 Consequence: Phase 8 now has a first inactive-monitor response that restores when frame metrics change. Cursor entry, foreground-window ownership, video exceptions, and blackout mode remain future work.
+
+## ADR-0011: Optional Tint Render Layer
+
+Decision: carry tint as part of `FinalEffectState` and render it as a full-monitor overlay layer after analysis is complete.
+
+Reason: tint should never alter the captured frame metrics used by luminance, flash, static, adaptive, or inactivity detectors.
+
+Consequence: Phase 9 has a basic CLI-controlled warm/neutral tint path. Per-monitor tint, schedules, richer color modes, and UI controls remain future work.

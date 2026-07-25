@@ -47,6 +47,12 @@
 - DDC/CI detection and rate-limited writes.
 - Schedules and startup restoration.
 
+## 0.8.0 - Focus Dimming and Tint
+
+- Basic CLI-controlled tint layer.
+- Active-window focus dimming.
+- Tint schedules and per-monitor tint.
+
 ## 1.0.0 - Stable Release
 
 - Installer and portable package.
