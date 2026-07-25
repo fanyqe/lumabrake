@@ -29,7 +29,7 @@ switch (command)
         return 0;
 
     case "safe-mode":
-        store.Save(settings with { Enabled = false, UserMaximumOpacity = 0.25 });
+        store.Save(SafeModeSettings.Apply(settings));
         Console.WriteLine("Safe mode settings saved.");
         return 0;
 

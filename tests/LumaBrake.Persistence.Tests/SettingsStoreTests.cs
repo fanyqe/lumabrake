@@ -42,6 +42,42 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Single(Directory.GetFiles(_root, "settings.json.corrupt-*"));
     }
 
+    [Fact]
+    public void SafeMode_DisablesEffectsAndClearsManualDimming()
+    {
+        var settings = new LumaBrakeSettings
+        {
+            Enabled = true,
+            UserMaximumOpacity = 0.64,
+            ManualDimmingOpacity = 0.35
+        };
+
+        var safe = SafeModeSettings.Apply(settings);
+
+        Assert.False(safe.Enabled);
+        Assert.Equal(0.25, safe.UserMaximumOpacity, precision: 12);
+        Assert.Equal(0, safe.ManualDimmingOpacity, precision: 12);
+    }
+
+    [Fact]
+    public void SafeMode_DoesNotRaiseExistingMaximumDimming()
+    {
+        var settings = new LumaBrakeSettings { UserMaximumOpacity = 0.12 };
+
+        var safe = SafeModeSettings.Apply(settings);
+
+        Assert.Equal(0.12, safe.UserMaximumOpacity, precision: 12);
+    }
+
+    [Theory]
+    [InlineData("--safe-mode", true)]
+    [InlineData("--SAFE-MODE", true)]
+    [InlineData("--other", false)]
+    public void SafeMode_DetectsStartupArgument(string argument, bool expected)
+    {
+        Assert.Equal(expected, SafeModeSettings.IsRequested([argument]));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

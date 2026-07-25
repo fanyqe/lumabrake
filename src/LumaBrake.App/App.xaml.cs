@@ -21,6 +21,12 @@ public partial class App : System.Windows.Application
         base.OnStartup(e);
 
         var settings = _settingsStore.Load();
+        if (SafeModeSettings.IsRequested(e.Args))
+        {
+            settings = SafeModeSettings.Apply(settings);
+            _settingsStore.Save(settings);
+        }
+
         var overlay = new OverlayRendererSet(Dispatcher);
         _controller = new LumaBrakeController(new GdiMonitorCapture(), overlay, settings, new WindowsMonitorEnumerator());
         _controller.Start();
