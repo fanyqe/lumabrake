@@ -251,6 +251,46 @@ public sealed class LumaBrakeControllerTests
         Assert.True(staticShadeDetected);
     }
 
+    [Fact]
+    public async Task Start_AppliesAdaptiveDimmingForPersistentBrightScene()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions
+                {
+                    MinimumBrightDuration = TimeSpan.FromMilliseconds(100),
+                    MinimumAverageLuminance = 0.30,
+                    MinimumPercentile95Luminance = 0.50,
+                    MinimumBrightPixelRatio = 0.20,
+                    Hold = TimeSpan.FromMilliseconds(250),
+                    Release = TimeSpan.FromMilliseconds(250)
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var adaptiveDetected = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                return snapshot.Monitors.Count == monitors.Length &&
+                    snapshot.Monitors.All(monitor =>
+                        monitor.ActiveReason == EffectReason.AdaptiveContent &&
+                        monitor.OverlayOpacity > 0 &&
+                        overlay.LastEffect(monitor.StableId)?.GlobalOpacity > 0);
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(adaptiveDetected);
+    }
+
     private static MonitorDescriptor[] TestMonitors() =>
     [
         new(

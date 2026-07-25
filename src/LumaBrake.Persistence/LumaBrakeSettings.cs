@@ -15,4 +15,6 @@ public sealed record LumaBrakeSettings
     public FlashDetectorOptions FlashGuard { get; init; } = new();
 
     public StaticShadeOptions StaticShade { get; init; } = new();
+
+    public AdaptiveContentOptions AdaptiveContent { get; init; } = new();
 }

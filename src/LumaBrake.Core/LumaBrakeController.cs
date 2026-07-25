@@ -257,6 +257,7 @@ public sealed class LumaBrakeController : IDisposable
             var spike = pipeline.Detector.Observe(analysis);
             var flash = pipeline.FlashDetector.Observe(analysis);
             var staticShade = pipeline.StaticShadeDetector.Observe(analysis);
+            var adaptive = pipeline.AdaptiveDetector.Observe(analysis);
             FinalEffectState final;
 
             lock (_gate)
@@ -305,6 +306,16 @@ public sealed class LumaBrakeController : IDisposable
                         Settings.StaticShade.Hold,
                         Settings.StaticShade.Release,
                         staticShade.AffectedRegions));
+                }
+
+                if (adaptive is not null)
+                {
+                    current.Envelope.Add(new EffectRequest(
+                        EffectReason.AdaptiveContent,
+                        adaptive.RecommendedOpacity,
+                        adaptive.Timestamp,
+                        Settings.AdaptiveContent.Hold,
+                        Settings.AdaptiveContent.Release));
                 }
 
                 var now = DateTimeOffset.UtcNow;
@@ -361,6 +372,7 @@ public sealed class LumaBrakeController : IDisposable
             Detector = new BrightnessSpikeDetector(settings.SpikeGuard);
             FlashDetector = new RepetitiveFlashDetector(settings.FlashGuard);
             StaticShadeDetector = new StaticShadeDetector(settings.StaticShade);
+            AdaptiveDetector = new AdaptiveContentDimmingDetector(settings.AdaptiveContent);
         }
 
         public MonitorDescriptor Monitor { get; set; }
@@ -370,6 +382,8 @@ public sealed class LumaBrakeController : IDisposable
         public RepetitiveFlashDetector FlashDetector { get; }
 
         public StaticShadeDetector StaticShadeDetector { get; }
+
+        public AdaptiveContentDimmingDetector AdaptiveDetector { get; }
 
         public EffectEnvelope Envelope { get; } = new();
 
