@@ -70,7 +70,12 @@ public sealed class LumaBrakeControllerTests
 
         Assert.True(capturedBoth);
         Assert.All(monitors, monitor => Assert.True(capture.CaptureCount(monitor.StableId) > 0));
-        Assert.True(controller.Snapshot().FramesAnalyzed >= monitors.Length);
+
+        var snapshotUpdated = await WaitUntilAsync(
+            () => controller.Snapshot().FramesAnalyzed >= monitors.Length,
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(snapshotUpdated);
     }
 
     [Fact]

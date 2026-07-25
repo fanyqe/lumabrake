@@ -5,4 +5,5 @@ public sealed record FrameAnalysisResult(
     double AverageLuminance,
     double PeakLuminance,
     double Percentile95Luminance,
-    double BrightPixelRatio);
+    double BrightPixelRatio,
+    FrameTileSummary? TileSummary = null);

@@ -14,6 +14,16 @@ public sealed record SpikeDetectorOptions
 
     public double BrightPixelRatioThreshold { get; init; } = 0.18;
 
+    public double BrightTileAverageThreshold { get; init; } = 0.35;
+
+    public double BrightTilePixelRatioThreshold { get; init; } = 0.20;
+
+    public double TileAverageIncreaseThreshold { get; init; } = 0.14;
+
+    public double MinimumBrightTileRatio { get; init; } = 0.10;
+
+    public double MinimumChangedTileRatio { get; init; } = 0.18;
+
     public TimeSpan Cooldown { get; init; } = TimeSpan.FromMilliseconds(900);
 
     public double MaximumOpacity { get; init; } = 0.58;

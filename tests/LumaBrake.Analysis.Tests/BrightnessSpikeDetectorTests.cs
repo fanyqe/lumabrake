@@ -66,17 +66,90 @@ public sealed class BrightnessSpikeDetectorTests
         Assert.Single(events);
     }
 
-    private static IEnumerable<FrameAnalysisResult> Sequence(IReadOnlyList<double> luminance, int stepMs = 100)
+    [Fact]
+    public void Observe_DoesNotTriggerWhenBrightRegionIsTooLocalized()
+    {
+        var detector = new BrightnessSpikeDetector(_options);
+        var frames = Sequence([0.08, 0.09, 0.08, 0.09]).Concat(
+        [
+            LocalizedBrightFrame(DateTimeOffset.UnixEpoch.AddMilliseconds(500))
+        ]);
+
+        var events = frames
+            .Select(detector.Observe)
+            .Where(result => result is not null)
+            .ToArray();
+
+        Assert.Empty(events);
+    }
+
+    [Fact]
+    public void Observe_DoesNotTriggerAgainForUnchangedBrightSceneAfterCooldown()
+    {
+        var detector = new BrightnessSpikeDetector(_options);
+        var frames = Sequence([0.08, 0.09, 0.08, 0.09])
+            .Concat(Sequence([0.86], stepMs: 100, startMs: 500))
+            .Concat(Sequence([0.86], stepMs: 100, startMs: 1200));
+
+        var events = frames
+            .Select(detector.Observe)
+            .Where(result => result is not null)
+            .ToArray();
+
+        Assert.Single(events);
+    }
+
+    private static IEnumerable<FrameAnalysisResult> Sequence(IReadOnlyList<double> luminance, int stepMs = 100, int startMs = 0)
     {
         for (var i = 0; i < luminance.Count; i++)
         {
             var value = luminance[i];
             yield return new FrameAnalysisResult(
-                new FrameMetadata(DateTimeOffset.UnixEpoch.AddMilliseconds(i * stepMs), 1, 1, "test"),
+                new FrameMetadata(DateTimeOffset.UnixEpoch.AddMilliseconds(startMs + (i * stepMs)), 1, 1, "test"),
                 value,
                 value,
                 value,
-                value >= 0.7 ? 1 : 0);
+                value >= 0.7 ? 1 : 0,
+                UniformTiles(value));
         }
+    }
+
+    private static FrameAnalysisResult LocalizedBrightFrame(DateTimeOffset timestamp)
+    {
+        var tiles = Enumerable.Range(0, 16)
+            .Select(index =>
+            {
+                var value = index < 2 ? 1 : 0;
+                return new TileLuminanceStats(
+                    Column: index % 4,
+                    Row: index / 4,
+                    AverageLuminance: value,
+                    Percentile95Luminance: value,
+                    BrightPixelRatio: value);
+            })
+            .ToArray();
+
+        return new FrameAnalysisResult(
+            new FrameMetadata(timestamp, 16, 9, "test"),
+            AverageLuminance: 0.125,
+            PeakLuminance: 1,
+            Percentile95Luminance: 1,
+            BrightPixelRatio: 0.125,
+            TileSummary: new FrameTileSummary(4, 4, tiles));
+    }
+
+    private static FrameTileSummary UniformTiles(double luminance)
+    {
+        var brightRatio = luminance >= 0.7 ? 1 : 0;
+        var tiles = Enumerable.Range(0, 16)
+            .Select(index => new TileLuminanceStats(
+                Column: index % 4,
+                Row: index / 4,
+                AverageLuminance: luminance,
+                Percentile95Luminance: luminance,
+                BrightPixelRatio: brightRatio))
+            .ToArray();
+
+        return new FrameTileSummary(4, 4, tiles);
     }
 }
