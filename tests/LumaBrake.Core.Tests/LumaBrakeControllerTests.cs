@@ -208,6 +208,49 @@ public sealed class LumaBrakeControllerTests
         Assert.True(flashDetected);
     }
 
+    [Fact]
+    public async Task Start_AppliesStaticShadeRegionalMaskForPersistentBrightTile()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new LocalizedStaticBrightCapture(monitors[0].StableId),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                StaticShade = new StaticShadeOptions
+                {
+                    MinimumStaticDuration = TimeSpan.FromMilliseconds(100),
+                    FullOpacityDuration = TimeSpan.FromMilliseconds(300),
+                    MinimumAffectedTileRatio = 0.005,
+                    MaximumAffectedTileRatio = 0.50,
+                    Hold = TimeSpan.FromMilliseconds(250),
+                    Release = TimeSpan.FromMilliseconds(250)
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var staticShadeDetected = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                var primary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[0].StableId);
+                var secondary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[1].StableId);
+                var effect = overlay.LastEffect(monitors[0].StableId);
+                return primary.ActiveReason == EffectReason.StaticShade &&
+                    primary.RegionalMaskCount > 0 &&
+                    effect is not null &&
+                    effect.RegionalMasks.Any(mask => mask.Reason == EffectReason.StaticShade) &&
+                    secondary.RegionalMaskCount == 0;
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(staticShadeDetected);
+    }
+
     private static MonitorDescriptor[] TestMonitors() =>
     [
         new(
@@ -307,6 +350,60 @@ public sealed class LumaBrakeControllerTests
             var isBright = string.Equals(monitor.StableId, _flashingStableId, StringComparison.OrdinalIgnoreCase) &&
                 count % 2 == 0;
 
+            return new CapturedFrame(
+                LocalizedPixels(isBright),
+                new FrameMetadata(DateTimeOffset.UtcNow, 160, 90, monitor.DeviceName),
+                monitor);
+        }
+
+        public void Dispose()
+        {
+        }
+
+        private static byte[] LocalizedPixels(bool isBright)
+        {
+            var pixels = new byte[160 * 90 * 4];
+            for (var index = 0; index < pixels.Length; index += 4)
+            {
+                pixels[index] = 0;
+                pixels[index + 1] = 0;
+                pixels[index + 2] = 0;
+                pixels[index + 3] = 255;
+            }
+
+            if (!isBright)
+            {
+                return pixels;
+            }
+
+            for (var y = 0; y < 10; y++)
+            {
+                for (var x = 0; x < 10; x++)
+                {
+                    var offset = ((y * 160) + x) * 4;
+                    pixels[offset] = 255;
+                    pixels[offset + 1] = 255;
+                    pixels[offset + 2] = 255;
+                    pixels[offset + 3] = 255;
+                }
+            }
+
+            return pixels;
+        }
+    }
+
+    private sealed class LocalizedStaticBrightCapture : IFrameCapture
+    {
+        private readonly string _brightStableId;
+
+        public LocalizedStaticBrightCapture(string brightStableId)
+        {
+            _brightStableId = brightStableId;
+        }
+
+        public CapturedFrame Capture(MonitorDescriptor monitor)
+        {
+            var isBright = string.Equals(monitor.StableId, _brightStableId, StringComparison.OrdinalIgnoreCase);
             return new CapturedFrame(
                 LocalizedPixels(isBright),
                 new FrameMetadata(DateTimeOffset.UtcNow, 160, 90, monitor.DeviceName),

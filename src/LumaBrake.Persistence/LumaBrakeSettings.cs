@@ -13,4 +13,6 @@ public sealed record LumaBrakeSettings
     public SpikeDetectorOptions SpikeGuard { get; init; } = new();
 
     public FlashDetectorOptions FlashGuard { get; init; } = new();
+
+    public StaticShadeOptions StaticShade { get; init; } = new();
 }
