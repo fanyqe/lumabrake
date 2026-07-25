@@ -18,6 +18,7 @@ public static partial class NativeMethods
     public const int DibRgbColors = 0;
     public const int BiRgb = 0;
     public const uint MonitorinfofPrimary = 0x00000001;
+    public const int MdtEffectiveDpi = 0;
 
     public delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref NativeRect lprcMonitor, IntPtr dwData);
 
@@ -106,4 +107,11 @@ public static partial class NativeMethods
         uint iDevNum,
         ref DisplayDevice lpDisplayDevice,
         uint dwFlags);
+
+    [DllImport("shcore.dll", SetLastError = true)]
+    public static extern int GetDpiForMonitor(
+        IntPtr hmonitor,
+        int dpiType,
+        out uint dpiX,
+        out uint dpiY);
 }

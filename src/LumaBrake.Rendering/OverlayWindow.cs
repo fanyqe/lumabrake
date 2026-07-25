@@ -1,13 +1,15 @@
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
+using LumaBrake.Domain.Monitors;
 
 namespace LumaBrake.Rendering;
 
-public sealed class OverlayWindow : Window, IOverlayRenderer
+public sealed class OverlayWindow : Window
 {
-    public OverlayWindow()
+    public OverlayWindow(MonitorDescriptor monitor)
     {
+        Monitor = monitor;
         AllowsTransparency = true;
         Background = Brushes.Black;
         Focusable = false;
@@ -19,16 +21,27 @@ public sealed class OverlayWindow : Window, IOverlayRenderer
         WindowStyle = WindowStyle.None;
         Opacity = 0;
 
-        Left = 0;
-        Top = 0;
-        Width = SystemParameters.PrimaryScreenWidth;
-        Height = SystemParameters.PrimaryScreenHeight;
+        ApplyMonitorBounds(monitor);
 
         SourceInitialized += (_, _) =>
         {
             var hwnd = new WindowInteropHelper(this).Handle;
             LumaBrake.Platform.Windows.WindowInterop.MakeOverlayWindow(hwnd);
         };
+    }
+
+    public MonitorDescriptor Monitor { get; private set; }
+
+    public void UpdateMonitor(MonitorDescriptor monitor)
+    {
+        Monitor = monitor;
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => ApplyMonitorBounds(monitor));
+            return;
+        }
+
+        ApplyMonitorBounds(monitor);
     }
 
     public void SetOpacity(double opacity)
@@ -72,5 +85,14 @@ public sealed class OverlayWindow : Window, IOverlayRenderer
         {
             Close();
         }
+    }
+
+    private void ApplyMonitorBounds(MonitorDescriptor monitor)
+    {
+        var scale = Math.Max(monitor.DpiScale, 0.1);
+        Left = monitor.Bounds.Left / scale;
+        Top = monitor.Bounds.Top / scale;
+        Width = monitor.Bounds.Width / scale;
+        Height = monitor.Bounds.Height / scale;
     }
 }

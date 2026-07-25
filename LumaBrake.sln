@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumaBrake.Persistence.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumaBrake.Domain.Tests", "tests\LumaBrake.Domain.Tests\LumaBrake.Domain.Tests.csproj", "{220B99CF-75C1-4156-82E3-2E78AB6A9773}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumaBrake.Core.Tests", "tests\LumaBrake.Core.Tests\LumaBrake.Core.Tests.csproj", "{B1A83148-1333-4577-8473-E285A663B73D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -241,6 +243,18 @@ Global
 		{220B99CF-75C1-4156-82E3-2E78AB6A9773}.Release|x64.Build.0 = Release|Any CPU
 		{220B99CF-75C1-4156-82E3-2E78AB6A9773}.Release|x86.ActiveCfg = Release|Any CPU
 		{220B99CF-75C1-4156-82E3-2E78AB6A9773}.Release|x86.Build.0 = Release|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Debug|x64.Build.0 = Debug|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Debug|x86.Build.0 = Debug|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Release|x64.ActiveCfg = Release|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Release|x64.Build.0 = Release|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Release|x86.ActiveCfg = Release|Any CPU
+		{B1A83148-1333-4577-8473-E285A663B73D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -262,5 +276,6 @@ Global
 		{951FBABE-E79D-4BAD-865F-07EB26090DD5} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{8D3551D6-E0DD-441B-BE82-3F8C35EBA8EF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{220B99CF-75C1-4156-82E3-2E78AB6A9773} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{B1A83148-1333-4577-8473-E285A663B73D} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

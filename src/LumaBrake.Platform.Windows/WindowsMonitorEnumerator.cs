@@ -36,6 +36,7 @@ public sealed class WindowsMonitorEnumerator : IMonitorCatalog
                     IsActive: true,
                     ToBounds(info.Monitor),
                     ToBounds(info.WorkArea),
+                    DpiScale: ResolveDpiScale(monitorHandle),
                     LastSeenAt: seenAt));
 
                 return true;
@@ -80,4 +81,26 @@ public sealed class WindowsMonitorEnumerator : IMonitorCatalog
 
     private static string StableId(string deviceName, string displayName, NativeRect bounds) =>
         $"{deviceName}|{displayName}|{bounds.Left},{bounds.Top},{bounds.Right - bounds.Left}x{bounds.Bottom - bounds.Top}";
+
+    private static double ResolveDpiScale(IntPtr monitorHandle)
+    {
+        try
+        {
+            var result = NativeMethods.GetDpiForMonitor(
+                monitorHandle,
+                NativeMethods.MdtEffectiveDpi,
+                out var dpiX,
+                out _);
+
+            return result == 0 && dpiX > 0 ? dpiX / 96.0 : 1.0;
+        }
+        catch (DllNotFoundException)
+        {
+            return 1.0;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return 1.0;
+        }
+    }
 }

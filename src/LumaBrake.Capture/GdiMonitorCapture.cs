@@ -1,26 +1,31 @@
 using System.Runtime.InteropServices;
 using LumaBrake.Domain.Frames;
+using LumaBrake.Domain.Monitors;
 using LumaBrake.Platform.Windows;
 
 namespace LumaBrake.Capture;
 
-public sealed class GdiPrimaryMonitorCapture : IFrameCapture
+public sealed class GdiMonitorCapture : IFrameCapture
 {
     private readonly int _analysisWidth;
     private readonly int _analysisHeight;
     private bool _disposed;
 
-    public GdiPrimaryMonitorCapture(int analysisWidth = 160, int analysisHeight = 90)
+    public GdiMonitorCapture(int analysisWidth = 160, int analysisHeight = 90)
     {
         _analysisWidth = analysisWidth;
         _analysisHeight = analysisHeight;
     }
 
-    public CapturedFrame Capture()
+    public CapturedFrame Capture(MonitorDescriptor monitor)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var monitor = PrimaryMonitor.Get();
+        if (monitor.Bounds.Width <= 0 || monitor.Bounds.Height <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(monitor), "Monitor bounds must be positive.");
+        }
+
         var bounds = monitor.Bounds;
         var screenDc = NativeMethods.GetDC(IntPtr.Zero);
         if (screenDc == IntPtr.Zero)
@@ -91,7 +96,8 @@ public sealed class GdiPrimaryMonitorCapture : IFrameCapture
 
             return new CapturedFrame(
                 buffer,
-                new FrameMetadata(DateTimeOffset.UtcNow, _analysisWidth, _analysisHeight, monitor.DeviceName));
+                new FrameMetadata(DateTimeOffset.UtcNow, _analysisWidth, _analysisHeight, monitor.DeviceName),
+                monitor);
         }
         finally
         {

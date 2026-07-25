@@ -13,4 +13,17 @@ public sealed record PipelineSnapshot(
     int MonitorCount,
     string MonitorStatus,
     long FramesAnalyzed,
+    long SpikeEvents,
+    IReadOnlyList<MonitorPipelineSnapshot> Monitors);
+
+public sealed record MonitorPipelineSnapshot(
+    string StableId,
+    string DeviceName,
+    string DisplayName,
+    bool IsPrimary,
+    double AverageLuminance,
+    double Percentile95Luminance,
+    double OverlayOpacity,
+    EffectReason ActiveReason,
+    long FramesAnalyzed,
     long SpikeEvents);

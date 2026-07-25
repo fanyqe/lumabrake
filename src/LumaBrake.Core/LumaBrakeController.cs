@@ -2,8 +2,8 @@ using LumaBrake.Analysis.Detection;
 using LumaBrake.Analysis.Frames;
 using LumaBrake.Capture;
 using LumaBrake.Diagnostics;
-using LumaBrake.Domain.Monitors;
 using LumaBrake.Domain.Effects;
+using LumaBrake.Domain.Monitors;
 using LumaBrake.Effects.Composition;
 using LumaBrake.Persistence;
 using LumaBrake.Rendering;
@@ -15,20 +15,13 @@ public sealed class LumaBrakeController : IDisposable
     private readonly IFrameCapture _capture;
     private readonly IOverlayRenderer _overlay;
     private readonly Bgra32FrameAnalyzer _analyzer = new();
-    private readonly BrightnessSpikeDetector _detector;
-    private readonly EffectEnvelope _envelope = new();
     private readonly EffectComposer _composer = new();
     private readonly IMonitorCatalog _monitorCatalog;
+    private readonly Dictionary<string, MonitorPipeline> _pipelines = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loop;
     private bool _disposed;
-    private long _framesAnalyzed;
-    private long _spikeEvents;
-    private double _lastAverage;
-    private double _lastP95;
-    private double _lastOpacity;
-    private EffectReason _lastReason = EffectReason.None;
     private IReadOnlyList<MonitorDescriptor> _monitors = Array.Empty<MonitorDescriptor>();
     private string _monitorStatus = "Monitor list has not been refreshed.";
 
@@ -37,7 +30,6 @@ public sealed class LumaBrakeController : IDisposable
         _capture = capture;
         _overlay = overlay;
         Settings = settings;
-        _detector = new BrightnessSpikeDetector(settings.SpikeGuard);
         _monitorCatalog = monitorCatalog;
         RefreshMonitors();
     }
@@ -49,8 +41,9 @@ public sealed class LumaBrakeController : IDisposable
     public void Start()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        _overlay.SyncMonitors(Monitors());
         _overlay.Show();
-        _overlay.SetOpacity(0);
+        _overlay.HideAll();
         _loop ??= Task.Run(() => RunAsync(_shutdown.Token));
     }
 
@@ -81,12 +74,15 @@ public sealed class LumaBrakeController : IDisposable
     {
         lock (_gate)
         {
-            _envelope.Clear();
-            _lastOpacity = 0;
-            _lastReason = EffectReason.None;
+            foreach (var pipeline in _pipelines.Values)
+            {
+                pipeline.Envelope.Clear();
+                pipeline.LastOpacity = 0;
+                pipeline.LastReason = EffectReason.None;
+            }
         }
 
-        _overlay.HideOverlay();
+        _overlay.HideAll();
         PublishSnapshot();
     }
 
@@ -94,21 +90,26 @@ public sealed class LumaBrakeController : IDisposable
     {
         lock (_gate)
         {
-            var activeMonitor = _monitors.FirstOrDefault(monitor => monitor.IsPrimary)
-                ?? _monitors.FirstOrDefault();
+            var pipelines = _pipelines.Values
+                .OrderByDescending(pipeline => pipeline.Monitor.IsPrimary)
+                .ThenBy(pipeline => pipeline.Monitor.DeviceName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            var activePipeline = pipelines.FirstOrDefault();
+            var monitorSnapshots = pipelines.Select(ToSnapshot).ToArray();
 
             return new PipelineSnapshot(
                 DateTimeOffset.UtcNow,
                 Settings.Enabled,
-                _lastAverage,
-                _lastP95,
-                _lastOpacity,
-                _lastReason,
-                activeMonitor?.DeviceName ?? "unknown",
+                activePipeline?.LastAverage ?? 0,
+                activePipeline?.LastP95 ?? 0,
+                activePipeline?.LastOpacity ?? 0,
+                activePipeline?.LastReason ?? EffectReason.None,
+                activePipeline?.Monitor.DeviceName ?? "unknown",
                 _monitors.Count,
                 _monitorStatus,
-                _framesAnalyzed,
-                _spikeEvents);
+                pipelines.Sum(pipeline => pipeline.FramesAnalyzed),
+                pipelines.Sum(pipeline => pipeline.SpikeEvents),
+                monitorSnapshots);
         }
     }
 
@@ -139,8 +140,26 @@ public sealed class LumaBrakeController : IDisposable
         {
             _monitors = monitors;
             _monitorStatus = monitorStatus;
+
+            var activeIds = monitors.Select(monitor => monitor.StableId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var removedId in _pipelines.Keys.Where(id => !activeIds.Contains(id)).ToArray())
+            {
+                _pipelines.Remove(removedId);
+            }
+
+            foreach (var monitor in monitors)
+            {
+                if (_pipelines.TryGetValue(monitor.StableId, out var pipeline))
+                {
+                    pipeline.Monitor = monitor;
+                    continue;
+                }
+
+                _pipelines[monitor.StableId] = new MonitorPipeline(monitor, Settings);
+            }
         }
 
+        _overlay.SyncMonitors(monitors);
         PublishSnapshot();
     }
 
@@ -181,7 +200,7 @@ public sealed class LumaBrakeController : IDisposable
                 }
                 else
                 {
-                    _overlay.SetOpacity(0);
+                    _overlay.HideAll();
                 }
             }
             catch (Exception)
@@ -194,31 +213,56 @@ public sealed class LumaBrakeController : IDisposable
 
     private void AnalyzeAndRender()
     {
-        var captured = _capture.Capture();
-        var analysis = _analyzer.Analyze(captured.BgraPixels, captured.Metadata);
-        var spike = _detector.Observe(analysis);
+        MonitorPipeline[] pipelines;
 
         lock (_gate)
         {
-            _framesAnalyzed++;
-            _lastAverage = analysis.AverageLuminance;
-            _lastP95 = analysis.Percentile95Luminance;
+            pipelines = _pipelines.Values.ToArray();
+        }
 
-            if (spike is not null)
+        if (pipelines.Length == 0)
+        {
+            _overlay.HideAll();
+            PublishSnapshot();
+            return;
+        }
+
+        foreach (var pipeline in pipelines)
+        {
+            var captured = _capture.Capture(pipeline.Monitor);
+            var analysis = _analyzer.Analyze(captured.BgraPixels, captured.Metadata);
+            var spike = pipeline.Detector.Observe(analysis);
+            double opacity;
+
+            lock (_gate)
             {
-                _spikeEvents++;
-                _envelope.Add(new EffectRequest(
-                    EffectReason.BrightnessSpike,
-                    spike.RecommendedOpacity,
-                    spike.Timestamp,
-                    Settings.SpikeGuard.Hold,
-                    Settings.SpikeGuard.Release));
+                if (!_pipelines.TryGetValue(pipeline.Monitor.StableId, out var current))
+                {
+                    continue;
+                }
+
+                current.FramesAnalyzed++;
+                current.LastAverage = analysis.AverageLuminance;
+                current.LastP95 = analysis.Percentile95Luminance;
+
+                if (spike is not null)
+                {
+                    current.SpikeEvents++;
+                    current.Envelope.Add(new EffectRequest(
+                        EffectReason.BrightnessSpike,
+                        spike.RecommendedOpacity,
+                        spike.Timestamp,
+                        Settings.SpikeGuard.Hold,
+                        Settings.SpikeGuard.Release));
+                }
+
+                var final = _composer.Compose(current.Envelope.ActiveAt(DateTimeOffset.UtcNow), Settings.UserMaximumOpacity);
+                current.LastOpacity = final.GlobalOpacity;
+                current.LastReason = final.GlobalReason;
+                opacity = final.GlobalOpacity;
             }
 
-            var final = _composer.Compose(_envelope.ActiveAt(DateTimeOffset.UtcNow), Settings.UserMaximumOpacity);
-            _lastOpacity = final.GlobalOpacity;
-            _lastReason = final.GlobalReason;
-            _overlay.SetOpacity(final.GlobalOpacity);
+            _overlay.SetOpacity(pipeline.Monitor.StableId, opacity);
         }
 
         PublishSnapshot();
@@ -227,5 +271,45 @@ public sealed class LumaBrakeController : IDisposable
     private void PublishSnapshot()
     {
         SnapshotUpdated?.Invoke(this, Snapshot());
+    }
+
+    private static MonitorPipelineSnapshot ToSnapshot(MonitorPipeline pipeline) =>
+        new(
+            pipeline.Monitor.StableId,
+            pipeline.Monitor.DeviceName,
+            pipeline.Monitor.DisplayName,
+            pipeline.Monitor.IsPrimary,
+            pipeline.LastAverage,
+            pipeline.LastP95,
+            pipeline.LastOpacity,
+            pipeline.LastReason,
+            pipeline.FramesAnalyzed,
+            pipeline.SpikeEvents);
+
+    private sealed class MonitorPipeline
+    {
+        public MonitorPipeline(MonitorDescriptor monitor, LumaBrakeSettings settings)
+        {
+            Monitor = monitor;
+            Detector = new BrightnessSpikeDetector(settings.SpikeGuard);
+        }
+
+        public MonitorDescriptor Monitor { get; set; }
+
+        public BrightnessSpikeDetector Detector { get; }
+
+        public EffectEnvelope Envelope { get; } = new();
+
+        public long FramesAnalyzed { get; set; }
+
+        public long SpikeEvents { get; set; }
+
+        public double LastAverage { get; set; }
+
+        public double LastP95 { get; set; }
+
+        public double LastOpacity { get; set; }
+
+        public EffectReason LastReason { get; set; } = EffectReason.None;
     }
 }

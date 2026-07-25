@@ -21,8 +21,8 @@ public partial class App : System.Windows.Application
         base.OnStartup(e);
 
         var settings = _settingsStore.Load();
-        var overlay = new OverlayWindow();
-        _controller = new LumaBrakeController(new GdiPrimaryMonitorCapture(), overlay, settings, new WindowsMonitorEnumerator());
+        var overlay = new OverlayRendererSet(Dispatcher);
+        _controller = new LumaBrakeController(new GdiMonitorCapture(), overlay, settings, new WindowsMonitorEnumerator());
         _controller.Start();
 
         _dashboard = new MainWindow(_controller, _settingsStore);

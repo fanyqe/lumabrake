@@ -31,13 +31,13 @@ switch (command)
         return 0;
 
     case "capture-test":
-        using (var capture = new GdiPrimaryMonitorCapture())
+        var primaryMonitor = PrimaryMonitor.Get();
+        using (var capture = new GdiMonitorCapture())
         {
-            var frame = capture.Capture();
+            var frame = capture.Capture(primaryMonitor);
             var result = new Bgra32FrameAnalyzer().Analyze(frame.BgraPixels, frame.Metadata);
-            var monitor = PrimaryMonitor.Get();
             Console.WriteLine($"Source monitor: {frame.Metadata.Source}");
-            Console.WriteLine($"Source bounds: {monitor.Bounds.Left},{monitor.Bounds.Top} {monitor.Bounds.Width}x{monitor.Bounds.Height}");
+            Console.WriteLine($"Source bounds: {primaryMonitor.Bounds.Left},{primaryMonitor.Bounds.Top} {primaryMonitor.Bounds.Width}x{primaryMonitor.Bounds.Height}");
             Console.WriteLine($"Captured frame: {frame.Metadata.Width}x{frame.Metadata.Height}");
             Console.WriteLine($"Average luminance: {result.AverageLuminance.ToString("0.000", CultureInfo.InvariantCulture)}");
             Console.WriteLine($"95th percentile luminance: {result.Percentile95Luminance.ToString("0.000", CultureInfo.InvariantCulture)}");
