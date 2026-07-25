@@ -4,6 +4,7 @@ using LumaBrake.Capture;
 using LumaBrake.Diagnostics;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Monitors;
+using LumaBrake.MonitorControl;
 using LumaBrake.Persistence;
 using LumaBrake.Platform.Windows;
 
@@ -101,17 +102,37 @@ switch (command)
             foreach (var monitor in monitors)
             {
                 Console.WriteLine(
-                    $"device=\"{monitor.DeviceName}\" " +
-                    $"id=\"{monitor.StableId}\" " +
+                    $"{KeyValue("device", monitor.DeviceName)} " +
+                    $"{KeyValue("id", monitor.StableId)} " +
                     $"role=\"{(monitor.IsPrimary ? "primary" : "secondary")}\" " +
-                    $"bounds=\"{monitor.Bounds.Left},{monitor.Bounds.Top} {monitor.Bounds.Width}x{monitor.Bounds.Height}\" " +
-                    $"name=\"{monitor.DisplayName}\"");
+                    $"{KeyValue("bounds", $"{monitor.Bounds.Left},{monitor.Bounds.Top} {monitor.Bounds.Width}x{monitor.Bounds.Height}")} " +
+                    $"{KeyValue("name", monitor.DisplayName)}");
             }
 
             return 0;
         }
 
         Console.Error.WriteLine("Usage: lumabrake monitor list");
+        return 2;
+
+    case "hardware":
+        if (args.Length >= 2 && string.Equals(args[1], "list", StringComparison.OrdinalIgnoreCase))
+        {
+            var capabilities = new DdcCiMonitorCatalog().GetCapabilities();
+            foreach (var capability in capabilities)
+            {
+                Console.WriteLine(
+                    $"{KeyValue("device", capability.DisplayDeviceName)} " +
+                    $"{KeyValue("physical", capability.PhysicalDescription)} " +
+                    $"ddcCi=\"{(capability.SupportsDdcCi ? "yes" : "no")}\" " +
+                    $"capabilitiesLength=\"{capability.CapabilitiesLength.ToString(CultureInfo.InvariantCulture)}\" " +
+                    $"{KeyValue("error", capability.Error ?? string.Empty)}");
+            }
+
+            return 0;
+        }
+
+        Console.Error.WriteLine("Usage: lumabrake hardware list");
         return 2;
 
     case "diagnostics":
@@ -145,7 +166,7 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|hardware list|diagnostics export [output.zip]");
         return 2;
 }
 
@@ -164,6 +185,16 @@ static double ParseManualOpacity(string value)
 
     var opacity = parsed > 1 ? parsed / 100.0 : parsed;
     return Math.Clamp(opacity, 0, 0.90);
+}
+
+static string KeyValue(string key, string value)
+{
+    var escaped = value
+        .Replace("\"", "\\\"", StringComparison.Ordinal)
+        .Replace("\r", "\\r", StringComparison.Ordinal)
+        .Replace("\n", "\\n", StringComparison.Ordinal);
+
+    return $"{key}=\"{escaped}\"";
 }
 
 static TintOptions ParseTintOptions(IReadOnlyList<string> args)

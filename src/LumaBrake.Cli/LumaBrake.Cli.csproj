@@ -5,6 +5,7 @@
     <ProjectReference Include="..\LumaBrake.Effects\LumaBrake.Effects.csproj" />
     <ProjectReference Include="..\LumaBrake.Domain\LumaBrake.Domain.csproj" />
     <ProjectReference Include="..\LumaBrake.Diagnostics\LumaBrake.Diagnostics.csproj" />
+    <ProjectReference Include="..\LumaBrake.MonitorControl\LumaBrake.MonitorControl.csproj" />
     <ProjectReference Include="..\LumaBrake.Persistence\LumaBrake.Persistence.csproj" />
     <ProjectReference Include="..\LumaBrake.Platform.Windows\LumaBrake.Platform.Windows.csproj" />
     <ProjectReference Include="..\LumaBrake.Capture\LumaBrake.Capture.csproj" />
