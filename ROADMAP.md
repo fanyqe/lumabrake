@@ -45,8 +45,9 @@
 ## 0.7.0 - Hardware Brightness and Schedules
 
 - Read-only DDC/CI capability detection.
+- Initial CLI startup schedule restoration.
 - Rate-limited hardware brightness reads and writes.
-- Schedules and startup restoration.
+- Runtime schedule refresh and profile integration.
 
 ## 0.8.0 - Focus Dimming and Tint
 

@@ -20,6 +20,7 @@ LumaBrake is a native Windows desktop application split into testable domain log
 
 ```text
 Each active monitor
+  -> startup restoration applies persisted software dimming, tint, or active schedule once
   -> GDI downscaled BGRA capture (160 x 90)
   -> sRGB-to-linear luminance calculation
   -> global average / p95 / bright pixel ratio / tile luminance summary
@@ -129,3 +130,11 @@ Decision: expose hardware brightness support first as a read-only `lumabrake har
 Reason: DDC/CI calls can be slow or unreliable on some displays, so hardware control must be introduced separately from the low-latency capture, analysis, and overlay loop.
 
 Consequence: Phase 10 now has a safe capability-detection base. Brightness reads, writes, rate limiting, monitor blacklists, reconnect recovery, and schedule/profile integration remain future work.
+
+## ADR-0013: Startup Schedule Foundation
+
+Decision: model schedules as deterministic local day-mask plus minute-of-day ranges and apply the first active schedule during application startup.
+
+Reason: startup restoration is useful before a full runtime scheduler exists, and local minute ranges avoid storing absolute timestamps or timezone-specific secrets in settings.
+
+Consequence: Phase 11 has a first CLI path for night schedules and startup restoration. Runtime refresh, per-monitor schedules, profile assignment, DST edge policy, and hardware brightness targets remain future work.

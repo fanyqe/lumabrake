@@ -2,7 +2,7 @@
 
 LumaBrake is an open-source Windows utility that analyzes screen luminance in real time and reduces sudden brightness spikes, repetitive flashes, static bright regions, and unnecessary brightness on inactive displays.
 
-The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, optional tint, and read-only DDC/CI capability detection:
+The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, optional tint, read-only DDC/CI capability detection, and initial startup schedules:
 
 - processing stays local;
 - raw screen samples are discarded after analysis;
@@ -34,7 +34,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Focus Dimming | Roadmap |
 | Optional Tint | Basic CLI-controlled tint implemented |
 | Hardware Brightness | Read-only DDC/CI capability detection implemented |
-| Profiles, rules, schedules | Roadmap |
+| Profiles, rules, schedules | Initial CLI schedule and startup restoration foundation implemented |
 
 ## Build
 
@@ -67,6 +67,9 @@ dotnet run --project src/LumaBrake.Cli -- tint off
 dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
 dotnet run --project src/LumaBrake.Cli -- hardware list
+dotnet run --project src/LumaBrake.Cli -- schedule night 22:00 07:00 24 warm 18
+dotnet run --project src/LumaBrake.Cli -- schedule list
+dotnet run --project src/LumaBrake.Cli -- startup-restore status
 dotnet run --project src/LumaBrake.Cli -- diagnostics export
 ```
 
