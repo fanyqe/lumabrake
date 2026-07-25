@@ -20,7 +20,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 
 | Feature | Status |
 | --- | --- |
-| Brightness Spike Guard | Phase 2 vertical slice implemented |
+| Brightness Spike Guard | Phase 4 tile-aware spike suppression in progress |
 | Multi-monitor capture and overlays | Basic Phase 3 pipeline implemented |
 | Manual software maximum dimming | Basic setting |
 | System tray controls | Implemented |

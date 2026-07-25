@@ -8,3 +8,4 @@
 - Added deterministic luminance, spike detector, effect composition, and settings recovery tests.
 - Added Windows monitor enumeration and `lumabrake monitor list` CLI smoke command.
 - Added basic Phase 3 per-monitor capture, detector state, diagnostics, and overlay windows.
+- Added tile-aware spike suppression so small bright regions are less likely to trigger full-monitor dimming.

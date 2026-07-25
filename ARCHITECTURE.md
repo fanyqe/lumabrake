@@ -15,14 +15,15 @@ LumaBrake is a native Windows desktop application split into testable domain log
 - `LumaBrake.Diagnostics`: pipeline snapshots for UI and future export.
 - `LumaBrake.Cli`: automation entry point for basic settings.
 
-## Phase 3 Data Flow
+## Phase 4 Data Flow
 
 ```text
 Each active monitor
   -> GDI downscaled BGRA capture (160 x 90)
   -> sRGB-to-linear luminance calculation
-  -> global average / p95 / bright pixel ratio
+  -> global average / p95 / bright pixel ratio / tile luminance summary
   -> per-monitor BrightnessSpikeDetector
+  -> broad bright-tile transition check
   -> per-monitor EffectEnvelope
   -> EffectComposer
   -> matching click-through WPF overlay opacity
@@ -59,3 +60,11 @@ Decision: maintain one detector/envelope/counter pipeline per active monitor and
 Reason: sudden brightness changes must be detected and rendered independently for each display before localized masks, inactive-monitor dimming, and per-monitor settings are added.
 
 Consequence: the current GDI backend still captures sequentially on one worker loop. DXGI Desktop Duplication or Windows Graphics Capture remains the target for lower latency and better scaling.
+
+## ADR-0005: Tile-Aware Spike Suppression
+
+Decision: calculate a small tile luminance summary for each analyzed frame and require broad changed bright-tile coverage before a global brightness spike is emitted.
+
+Reason: p95 luminance can be high when a small region is bright, but a small bright object should not always trigger full-monitor dimming.
+
+Consequence: the first Phase 4 slice improves false-positive suppression for global dimming. Localized masks and richer scene-change diagnostics remain future work.
