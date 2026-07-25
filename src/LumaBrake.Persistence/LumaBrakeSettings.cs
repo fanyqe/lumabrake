@@ -9,4 +9,6 @@ public sealed record LumaBrakeSettings
     public double UserMaximumOpacity { get; init; } = 0.64;
 
     public SpikeDetectorOptions SpikeGuard { get; init; } = new();
+
+    public FlashDetectorOptions FlashGuard { get; init; } = new();
 }

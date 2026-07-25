@@ -95,7 +95,7 @@ public partial class MainWindow : Window
         AverageText.Text = snapshot.AverageLuminance.ToString("0.000");
         P95Text.Text = snapshot.Percentile95Luminance.ToString("0.000");
         OpacityText.Text = FormatPercent(snapshot.OverlayOpacity);
-        EventsText.Text = snapshot.SpikeEvents.ToString("N0");
+        EventsText.Text = (snapshot.SpikeEvents + snapshot.FlashEvents).ToString("N0");
         MaximumOpacityText.Text = FormatPercent(MaximumOpacitySlider.Value);
         MonitorText.Text = snapshot.MonitorCount == 0
             ? snapshot.MonitorStatus

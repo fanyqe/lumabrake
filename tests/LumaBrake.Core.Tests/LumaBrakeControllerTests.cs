@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using LumaBrake.Capture;
 using LumaBrake.Core;
+using LumaBrake.Domain.Analysis;
+using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Frames;
 using LumaBrake.Domain.Monitors;
 using LumaBrake.Persistence;
@@ -95,6 +97,44 @@ public sealed class LumaBrakeControllerTests
         Assert.All(controller.Snapshot().Monitors, monitor => Assert.Equal(0, monitor.OverlayOpacity));
     }
 
+    [Fact]
+    public async Task Start_AddsRepetitiveFlashEventsForOnlyTheFlashingMonitor()
+    {
+        var monitors = TestMonitors();
+        using var controller = new LumaBrakeController(
+            new FlashingCapture(monitors[0].StableId),
+            new RecordingOverlay(),
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                FlashGuard = new FlashDetectorOptions
+                {
+                    MinimumTransitions = 3,
+                    MinimumAffectedTileRatio = 0.50,
+                    Cooldown = TimeSpan.FromSeconds(5),
+                    Hold = TimeSpan.FromSeconds(5),
+                    Release = TimeSpan.FromSeconds(5)
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var flashDetected = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                var primary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[0].StableId);
+                var secondary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[1].StableId);
+                return primary.FlashEvents > 0 &&
+                    primary.ActiveReason == EffectReason.RepetitiveFlash &&
+                    secondary.FlashEvents == 0;
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(flashDetected);
+    }
+
     private static MonitorDescriptor[] TestMonitors() =>
     [
         new(
@@ -171,6 +211,47 @@ public sealed class LumaBrakeControllerTests
                 pixels[index] = 240;
                 pixels[index + 1] = 240;
                 pixels[index + 2] = 240;
+                pixels[index + 3] = 255;
+            }
+
+            return pixels;
+        }
+    }
+
+    private sealed class FlashingCapture : IFrameCapture
+    {
+        private readonly string _flashingStableId;
+        private readonly ConcurrentDictionary<string, int> _captureCounts = new(StringComparer.OrdinalIgnoreCase);
+
+        public FlashingCapture(string flashingStableId)
+        {
+            _flashingStableId = flashingStableId;
+        }
+
+        public CapturedFrame Capture(MonitorDescriptor monitor)
+        {
+            var count = _captureCounts.AddOrUpdate(monitor.StableId, 1, (_, current) => current + 1);
+            var isBright = string.Equals(monitor.StableId, _flashingStableId, StringComparison.OrdinalIgnoreCase) &&
+                count % 2 == 0;
+
+            return new CapturedFrame(
+                SolidPixels(isBright ? (byte)255 : (byte)0),
+                new FrameMetadata(DateTimeOffset.UtcNow, 160, 90, monitor.DeviceName),
+                monitor);
+        }
+
+        public void Dispose()
+        {
+        }
+
+        private static byte[] SolidPixels(byte value)
+        {
+            var pixels = new byte[160 * 90 * 4];
+            for (var index = 0; index < pixels.Length; index += 4)
+            {
+                pixels[index] = value;
+                pixels[index + 1] = value;
+                pixels[index + 2] = value;
                 pixels[index + 3] = 255;
             }
 

@@ -72,7 +72,7 @@
                             <TextBlock x:Name="OpacityText" Text="0%" FontSize="26" FontWeight="SemiBold" Margin="0,6,0,0" />
                         </StackPanel>
                         <StackPanel>
-                            <TextBlock Text="Spike events" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="Protection events" Foreground="{StaticResource MutedBrush}" />
                             <TextBlock x:Name="EventsText" Text="0" FontSize="26" FontWeight="SemiBold" Margin="0,6,0,0" />
                         </StackPanel>
                     </UniformGrid>

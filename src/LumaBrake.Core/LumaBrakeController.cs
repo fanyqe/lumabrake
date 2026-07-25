@@ -109,6 +109,7 @@ public sealed class LumaBrakeController : IDisposable
                 _monitorStatus,
                 pipelines.Sum(pipeline => pipeline.FramesAnalyzed),
                 pipelines.Sum(pipeline => pipeline.SpikeEvents),
+                pipelines.Sum(pipeline => pipeline.FlashEvents),
                 monitorSnapshots);
         }
     }
@@ -232,6 +233,7 @@ public sealed class LumaBrakeController : IDisposable
             var captured = _capture.Capture(pipeline.Monitor);
             var analysis = _analyzer.Analyze(captured.BgraPixels, captured.Metadata);
             var spike = pipeline.Detector.Observe(analysis);
+            var flash = pipeline.FlashDetector.Observe(analysis);
             double opacity;
 
             lock (_gate)
@@ -254,6 +256,17 @@ public sealed class LumaBrakeController : IDisposable
                         spike.Timestamp,
                         Settings.SpikeGuard.Hold,
                         Settings.SpikeGuard.Release));
+                }
+
+                if (flash is not null)
+                {
+                    current.FlashEvents++;
+                    current.Envelope.Add(new EffectRequest(
+                        EffectReason.RepetitiveFlash,
+                        flash.RecommendedOpacity,
+                        flash.Timestamp,
+                        Settings.FlashGuard.Hold,
+                        Settings.FlashGuard.Release));
                 }
 
                 var final = _composer.Compose(current.Envelope.ActiveAt(DateTimeOffset.UtcNow), Settings.UserMaximumOpacity);
@@ -284,7 +297,8 @@ public sealed class LumaBrakeController : IDisposable
             pipeline.LastOpacity,
             pipeline.LastReason,
             pipeline.FramesAnalyzed,
-            pipeline.SpikeEvents);
+            pipeline.SpikeEvents,
+            pipeline.FlashEvents);
 
     private sealed class MonitorPipeline
     {
@@ -292,17 +306,22 @@ public sealed class LumaBrakeController : IDisposable
         {
             Monitor = monitor;
             Detector = new BrightnessSpikeDetector(settings.SpikeGuard);
+            FlashDetector = new RepetitiveFlashDetector(settings.FlashGuard);
         }
 
         public MonitorDescriptor Monitor { get; set; }
 
         public BrightnessSpikeDetector Detector { get; }
 
+        public RepetitiveFlashDetector FlashDetector { get; }
+
         public EffectEnvelope Envelope { get; } = new();
 
         public long FramesAnalyzed { get; set; }
 
         public long SpikeEvents { get; set; }
+
+        public long FlashEvents { get; set; }
 
         public double LastAverage { get; set; }
 

@@ -14,6 +14,7 @@ public sealed record PipelineSnapshot(
     string MonitorStatus,
     long FramesAnalyzed,
     long SpikeEvents,
+    long FlashEvents,
     IReadOnlyList<MonitorPipelineSnapshot> Monitors);
 
 public sealed record MonitorPipelineSnapshot(
@@ -26,4 +27,5 @@ public sealed record MonitorPipelineSnapshot(
     double OverlayOpacity,
     EffectReason ActiveReason,
     long FramesAnalyzed,
-    long SpikeEvents);
+    long SpikeEvents,
+    long FlashEvents);
