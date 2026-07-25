@@ -32,7 +32,7 @@
 
 ## 0.5.0 - StaticShade
 
-- Static bright region detection.
+- Initial static bright tile detection.
 - Exposure scoring.
 - OLED profiles.
 

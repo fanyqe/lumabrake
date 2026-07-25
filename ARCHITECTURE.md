@@ -25,6 +25,7 @@ Each active monitor
   -> per-monitor BrightnessSpikeDetector
   -> broad bright-tile transition check
   -> per-monitor RepetitiveFlashDetector
+  -> per-monitor StaticShadeDetector
   -> per-monitor EffectEnvelope
   -> EffectComposer
   -> matching click-through WPF overlay global opacity / regional masks
@@ -85,3 +86,11 @@ Decision: when repetitive flashing affects a small tile area, carry the affected
 Reason: a flashing advertisement, HUD element, or small preview should be dimmed locally without unnecessarily darkening the rest of the monitor.
 
 Consequence: Phase 6 now has a first working tile-mask path using one click-through overlay window per monitor. Broad flash coverage still falls back to global dimming, and feathered edges plus merged region smoothing remain future work.
+
+## ADR-0008: Initial StaticShade Tile State
+
+Decision: track only per-tile luminance averages, bright-pixel ratios, and static duration for StaticShade instead of storing raw frames or screenshots.
+
+Reason: persistent bright UI regions can be detected deterministically from bounded tile metrics while preserving the privacy rule that screen content is not persisted.
+
+Consequence: Phase 7 has an initial localized dimming path for small bright static regions. Motion scoring, accumulated exposure scoring, OLED profiles, and full-screen intent detection remain future work.

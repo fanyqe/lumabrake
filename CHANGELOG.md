@@ -14,3 +14,4 @@
 - Added global manual software dimming in the dashboard and CLI.
 - Added a shared Safe Mode policy and `--safe-mode` app startup argument.
 - Added initial localized flash masks for small repetitive flashing tile regions.
+- Added an initial StaticShade detector for persistent bright tile regions.
