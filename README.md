@@ -27,7 +27,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | System tray controls | Implemented |
 | Emergency hotkey | Implemented |
 | Local deterministic luminance analysis | Implemented |
-| Repetitive Flash Guard | Initial tile temporal detector implemented |
+| Repetitive Flash Guard | Initial tile temporal and red-dominant detector implemented |
 | Localized Flash Masking | Initial tile regional overlay implemented |
 | StaticShade | Initial static bright tile masking implemented |
 | Adaptive Content Dimming | Initial persistent bright-scene dimming implemented |

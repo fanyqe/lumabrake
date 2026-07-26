@@ -25,6 +25,10 @@ Safe Mode also disables persisted hardware brightness write permission. Read-onl
 - Run `monitor list` to confirm Windows reports every active display.
 - Protected or exclusive full-screen content may limit capture.
 
+## Repetitive Flash Guard
+
+The flash detector uses tile-level luminance transitions and red-dominance transitions. Red-dominant detection can be disabled or tuned in `flashGuard` settings with `redFlashDetectionEnabled`, `redDominanceThreshold`, and `redDominantPixelRatioThreshold`.
+
 ## Build Uses The Wrong SDK
 
 Run:

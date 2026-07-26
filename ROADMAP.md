@@ -21,7 +21,7 @@
 
 - Tile history.
 - Local and global flash response.
-- Red-dominant flash detection.
+- Initial red-dominant flash detection.
 - Diagnostic panel.
 
 ## 0.4.0 - Localized Masking

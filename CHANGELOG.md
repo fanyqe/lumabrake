@@ -28,3 +28,4 @@
 - Added CLI software profiles for saving, listing, applying, and removing reusable dimming, tint, and focus settings.
 - Added editable CLI schedules with named set, remove, enable-entry, disable-entry, and readable day-mask output.
 - Added initial per-monitor tint overrides through the CLI with schedule tint precedence.
+- Added red-dominant repetitive flash detection using tile-level red-dominance metrics.

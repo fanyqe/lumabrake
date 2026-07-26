@@ -23,7 +23,7 @@ Each active monitor
   -> startup restoration applies persisted software dimming, tint, profile-applied settings, or active schedule once
   -> GDI downscaled BGRA capture (160 x 90)
   -> sRGB-to-linear luminance calculation
-  -> global average / p95 / bright pixel ratio / tile luminance summary
+  -> global average / p95 / bright pixel ratio / tile luminance and red-dominance summary
   -> per-monitor BrightnessSpikeDetector
   -> broad bright-tile transition check
   -> per-monitor RepetitiveFlashDetector
@@ -79,11 +79,11 @@ Consequence: the first Phase 4 slice improves false-positive suppression for glo
 
 ## ADR-0006: Repetitive Flash Temporal State
 
-Decision: track per-tile bright/dark transitions inside a bounded time window and emit a `RepetitiveFlash` effect when enough transitions affect enough tiles.
+Decision: track per-tile bright/dark transitions inside a bounded time window and emit a `RepetitiveFlash` effect when enough transitions affect enough tiles. Each tile also carries a red-dominance signal so repeated red-black flashes can trigger even when relative luminance stays below the normal bright-tile threshold.
 
 Reason: repetitive flashes are not the same as a single dark-to-bright spike; they require temporal transition counting and cooldown handling.
 
-Consequence: the first Phase 5 slice produced a global dimming response for detected repetitive flashes. Red-flash detection and richer diagnostics remain future work.
+Consequence: the first Phase 5 slices produce global or localized dimming for detected repetitive flashes, including red-dominant flashes. Richer diagnostics remain future work.
 
 ## ADR-0007: Initial Localized Flash Masks
 
