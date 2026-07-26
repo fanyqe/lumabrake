@@ -29,3 +29,4 @@
 - Added editable CLI schedules with named set, remove, enable-entry, disable-entry, and readable day-mask output.
 - Added initial per-monitor tint overrides through the CLI with schedule tint precedence.
 - Added red-dominant repetitive flash detection using tile-level red-dominance metrics.
+- Added red-dominant flash counters to pipeline diagnostics and the dashboard event display.

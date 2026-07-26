@@ -29,6 +29,8 @@ Safe Mode also disables persisted hardware brightness write permission. Read-onl
 
 The flash detector uses tile-level luminance transitions and red-dominance transitions. Red-dominant detection can be disabled or tuned in `flashGuard` settings with `redFlashDetectionEnabled`, `redDominanceThreshold`, and `redDominantPixelRatioThreshold`.
 
+The dashboard keeps the main protection-event total and appends a red-flash count when red-dominant events have been detected.
+
 ## Build Uses The Wrong SDK
 
 Run:

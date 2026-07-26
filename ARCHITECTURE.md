@@ -32,6 +32,7 @@ Each active monitor
   -> per-monitor InactiveMonitorDimmingDetector for non-primary displays
   -> foreground monitor lookup for optional focus dimming
   -> active schedule request as a low-priority runtime effect
+  -> per-monitor diagnostics counters, including red-dominant flash events
   -> per-monitor EffectEnvelope
   -> EffectComposer with scheduled, per-monitor, or global tint
   -> matching click-through WPF overlay global opacity / regional masks / tint
