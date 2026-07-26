@@ -4,6 +4,8 @@ namespace LumaBrake.Effects.Composition;
 
 public sealed class EffectComposer
 {
+    private const double RegionalMaskPadding = 0.00625;
+
     public FinalEffectState Compose(
         IEnumerable<EffectRequest> activeRequests,
         double userMaximumOpacity,
@@ -42,8 +44,68 @@ public sealed class EffectComposer
             .Where(mask => mask.Opacity > 0 && mask.Region.Area > 0)
             .ToArray();
 
-        return new FinalEffectState(combined, winningReason, reasons, regionalMasks, finalTint);
+        return new FinalEffectState(combined, winningReason, reasons, MergeRegionalMasks(regionalMasks), finalTint);
     }
+
+    private static IReadOnlyList<RegionalEffectMask> MergeRegionalMasks(IReadOnlyList<RegionalEffectMask> masks)
+    {
+        var merged = new List<RegionalEffectMask>();
+        foreach (var mask in masks)
+        {
+            var candidate = mask with { Region = mask.Region.Pad(RegionalMaskPadding) };
+            var mergedIntoExisting = false;
+            for (var index = 0; index < merged.Count; index++)
+            {
+                var current = merged[index];
+                if (!CanMerge(current, candidate))
+                {
+                    continue;
+                }
+
+                merged[index] = current with { Region = current.Region.Union(candidate.Region) };
+                mergedIntoExisting = true;
+                break;
+            }
+
+            if (!mergedIntoExisting)
+            {
+                merged.Add(candidate);
+            }
+        }
+
+        var changed = true;
+        while (changed)
+        {
+            changed = false;
+            for (var index = 0; index < merged.Count; index++)
+            {
+                for (var otherIndex = index + 1; otherIndex < merged.Count; otherIndex++)
+                {
+                    if (!CanMerge(merged[index], merged[otherIndex]))
+                    {
+                        continue;
+                    }
+
+                    merged[index] = merged[index] with { Region = merged[index].Region.Union(merged[otherIndex].Region) };
+                    merged.RemoveAt(otherIndex);
+                    changed = true;
+                    break;
+                }
+
+                if (changed)
+                {
+                    break;
+                }
+            }
+        }
+
+        return merged;
+    }
+
+    private static bool CanMerge(RegionalEffectMask first, RegionalEffectMask second) =>
+        first.Reason == second.Reason &&
+        Math.Abs(first.Opacity - second.Opacity) < 0.001 &&
+        first.Region.TouchesOrOverlaps(second.Region);
 
     private static double RegionalOverlayOpacity(double requestedOpacity, double globalOpacity, double maximumOpacity)
     {

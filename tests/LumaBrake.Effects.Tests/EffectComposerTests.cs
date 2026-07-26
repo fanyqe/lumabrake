@@ -86,7 +86,10 @@ public sealed class EffectComposerTests
         Assert.Equal(EffectReason.RepetitiveFlash, state.GlobalReason);
         var mask = Assert.Single(state.RegionalMasks);
         Assert.Equal(0.40, mask.Opacity, precision: 12);
-        Assert.Equal(new EffectRegion(0, 0, 0.25, 0.25), mask.Region);
+        Assert.Equal(0, mask.Region.X, precision: 12);
+        Assert.Equal(0, mask.Region.Y, precision: 12);
+        Assert.True(mask.Region.Width > 0.25);
+        Assert.True(mask.Region.Height > 0.25);
     }
 
     [Fact]
@@ -113,6 +116,61 @@ public sealed class EffectComposerTests
 
         Assert.Equal(0.40, state.GlobalOpacity, precision: 12);
         Assert.Equal(0.60, combinedRegionalAreaOpacity, precision: 12);
+    }
+
+    [Fact]
+    public void Compose_MergesAdjacentRegionalMasksForSameReason()
+    {
+        var composer = new EffectComposer();
+        var now = DateTimeOffset.UnixEpoch;
+
+        var state = composer.Compose(
+            [
+                new EffectRequest(
+                    EffectReason.RepetitiveFlash,
+                    0.40,
+                    now,
+                    TimeSpan.Zero,
+                    TimeSpan.Zero,
+                    [
+                        new EffectRegion(0, 0, 0.10, 0.10),
+                        new EffectRegion(0.10, 0, 0.10, 0.10)
+                    ])
+            ],
+            userMaximumOpacity: 0.90);
+
+        var mask = Assert.Single(state.RegionalMasks);
+        Assert.Equal(EffectReason.RepetitiveFlash, mask.Reason);
+        Assert.True(mask.Region.Width > 0.20);
+        Assert.True(mask.Region.Height > 0.10);
+    }
+
+    [Fact]
+    public void Compose_DoesNotMergeRegionalMasksFromDifferentReasons()
+    {
+        var composer = new EffectComposer();
+        var now = DateTimeOffset.UnixEpoch;
+
+        var state = composer.Compose(
+            [
+                new EffectRequest(
+                    EffectReason.RepetitiveFlash,
+                    0.40,
+                    now,
+                    TimeSpan.Zero,
+                    TimeSpan.Zero,
+                    [new EffectRegion(0, 0, 0.10, 0.10)]),
+                new EffectRequest(
+                    EffectReason.StaticShade,
+                    0.40,
+                    now,
+                    TimeSpan.Zero,
+                    TimeSpan.Zero,
+                    [new EffectRegion(0.10, 0, 0.10, 0.10)])
+            ],
+            userMaximumOpacity: 0.90);
+
+        Assert.Equal(2, state.RegionalMasks.Count);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Monitors;
@@ -10,6 +11,8 @@ namespace LumaBrake.Rendering;
 
 public sealed class OverlayWindow : Window
 {
+    private const double RegionalFeatherRadius = 18;
+
     private readonly Canvas _surface = new()
     {
         IsHitTestVisible = false
@@ -161,6 +164,12 @@ public sealed class OverlayWindow : Window
         {
             var rectangle = new Rectangle
             {
+                CacheMode = new BitmapCache(),
+                Effect = new BlurEffect
+                {
+                    Radius = RegionalFeatherRadius,
+                    RenderingBias = RenderingBias.Performance
+                },
                 Fill = Brushes.Black,
                 IsHitTestVisible = false
             };
