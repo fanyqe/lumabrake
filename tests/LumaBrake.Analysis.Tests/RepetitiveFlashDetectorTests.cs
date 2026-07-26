@@ -61,6 +61,58 @@ public sealed class RepetitiveFlashDetectorTests
     }
 
     [Fact]
+    public void Observe_DetectsRedDominantFlashBelowBrightLuminanceThreshold()
+    {
+        var detector = new RepetitiveFlashDetector(_options);
+        var events = RedDominantSequence([false, true, false, true])
+            .Select(detector.Observe)
+            .Where(result => result is not null)
+            .ToArray();
+
+        var flash = Assert.Single(events);
+        Assert.True(flash!.IsRedDominant);
+        Assert.Equal(16, flash.RedDominantTileCount);
+        Assert.Equal(16, flash.AffectedTileCount);
+        Assert.InRange(flash.RecommendedOpacity, 0.45, _options.MaximumOpacity);
+    }
+
+    [Fact]
+    public void Observe_DoesNotDetectRedFlashWhenRedDetectionIsDisabled()
+    {
+        var detector = new RepetitiveFlashDetector(_options with { RedFlashDetectionEnabled = false });
+        var events = RedDominantSequence([false, true, false, true])
+            .Select(detector.Observe)
+            .Where(result => result is not null)
+            .ToArray();
+
+        Assert.Empty(events);
+    }
+
+    [Fact]
+    public void Observe_DoesNotTriggerOnSteadyRedDominantTiles()
+    {
+        var detector = new RepetitiveFlashDetector(_options);
+        var events = RedDominantSequence([true, true, true, true])
+            .Select(detector.Observe)
+            .Where(result => result is not null)
+            .ToArray();
+
+        Assert.Empty(events);
+    }
+
+    [Fact]
+    public void Observe_DoesNotTreatWeakRedDominanceAsFlash()
+    {
+        var detector = new RepetitiveFlashDetector(_options);
+        var events = WeakRedSequence([false, true, false, true])
+            .Select(detector.Observe)
+            .Where(result => result is not null)
+            .ToArray();
+
+        Assert.Empty(events);
+    }
+
+    [Fact]
     public void Observe_PrunesTransitionsOutsideWindow()
     {
         var detector = new RepetitiveFlashDetector(_options with { Window = TimeSpan.FromMilliseconds(250) });
@@ -77,6 +129,24 @@ public sealed class RepetitiveFlashDetectorTests
         for (var index = 0; index < values.Count; index++)
         {
             yield return Frame(values[index], UniformTiles(values[index]), index * stepMs);
+        }
+    }
+
+    private static IEnumerable<FrameAnalysisResult> RedDominantSequence(IReadOnlyList<bool> redFrames, int stepMs = 100)
+    {
+        for (var index = 0; index < redFrames.Count; index++)
+        {
+            var summary = redFrames[index] ? UniformRedTiles() : UniformTiles(0.05);
+            yield return Frame(redFrames[index] ? 0.2126 : 0.05, summary, index * stepMs);
+        }
+    }
+
+    private static IEnumerable<FrameAnalysisResult> WeakRedSequence(IReadOnlyList<bool> redFrames, int stepMs = 100)
+    {
+        for (var index = 0; index < redFrames.Count; index++)
+        {
+            var summary = redFrames[index] ? UniformWeakRedTiles() : UniformTiles(0.05);
+            yield return Frame(redFrames[index] ? 0.20 : 0.05, summary, index * stepMs);
         }
     }
 
@@ -106,6 +176,24 @@ public sealed class RepetitiveFlashDetectorTests
         return new FrameTileSummary(4, 4, tiles);
     }
 
+    private static FrameTileSummary UniformRedTiles()
+    {
+        var tiles = Enumerable.Range(0, 16)
+            .Select(index => RedTile(index))
+            .ToArray();
+
+        return new FrameTileSummary(4, 4, tiles);
+    }
+
+    private static FrameTileSummary UniformWeakRedTiles()
+    {
+        var tiles = Enumerable.Range(0, 16)
+            .Select(index => WeakRedTile(index))
+            .ToArray();
+
+        return new FrameTileSummary(4, 4, tiles);
+    }
+
     private static FrameTileSummary LocalizedTiles(double luminance)
     {
         var tiles = Enumerable.Range(0, 16)
@@ -124,5 +212,29 @@ public sealed class RepetitiveFlashDetectorTests
             AverageLuminance: luminance,
             Percentile95Luminance: luminance,
             BrightPixelRatio: brightRatio);
+    }
+
+    private static TileLuminanceStats RedTile(int index)
+    {
+        return new TileLuminanceStats(
+            Column: index % 4,
+            Row: index / 4,
+            AverageLuminance: 0.2126,
+            Percentile95Luminance: 0.2126,
+            BrightPixelRatio: 0,
+            AverageRedDominance: 1,
+            RedDominantPixelRatio: 1);
+    }
+
+    private static TileLuminanceStats WeakRedTile(int index)
+    {
+        return new TileLuminanceStats(
+            Column: index % 4,
+            Row: index / 4,
+            AverageLuminance: 0.20,
+            Percentile95Luminance: 0.20,
+            BrightPixelRatio: 0,
+            AverageRedDominance: 0.20,
+            RedDominantPixelRatio: 1);
     }
 }

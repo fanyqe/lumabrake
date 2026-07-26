@@ -9,4 +9,8 @@ public sealed record FlashEvent(
     double AffectedTileRatio,
     int MaxTransitionCount,
     double RecommendedOpacity,
-    IReadOnlyList<EffectRegion> AffectedRegions);
+    IReadOnlyList<EffectRegion> AffectedRegions,
+    int RedDominantTileCount = 0)
+{
+    public bool IsRedDominant => RedDominantTileCount > 0;
+}

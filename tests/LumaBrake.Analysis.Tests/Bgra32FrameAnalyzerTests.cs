@@ -52,6 +52,23 @@ public sealed class Bgra32FrameAnalyzerTests
     }
 
     [Fact]
+    public void Analyze_ReportsRedDominanceForPureRedTiles()
+    {
+        var analyzer = new Bgra32FrameAnalyzer(tileColumns: 2, tileRows: 2);
+        var pixels = SolidBgra(4, 4, 0, 0, 0);
+        FillRectangle(pixels, 4, left: 0, top: 0, width: 2, height: 2, red: 255, green: 0, blue: 0);
+
+        var result = analyzer.Analyze(pixels, Metadata(4, 4));
+
+        Assert.NotNull(result.TileSummary);
+        Assert.InRange(result.TileSummary.Tiles[0].AverageLuminance, 0.2125, 0.2127);
+        Assert.Equal(1, result.TileSummary.Tiles[0].AverageRedDominance, precision: 12);
+        Assert.Equal(1, result.TileSummary.Tiles[0].RedDominantPixelRatio, precision: 12);
+        Assert.Equal(0, result.TileSummary.Tiles[1].AverageRedDominance, precision: 12);
+        Assert.Equal(0, result.TileSummary.Tiles[1].RedDominantPixelRatio, precision: 12);
+    }
+
+    [Fact]
     public void Analyze_ReportsLowTileCoverageForSmallBrightRegion()
     {
         var analyzer = new Bgra32FrameAnalyzer(tileColumns: 4, tileRows: 4);

@@ -16,6 +16,12 @@ public sealed record FlashDetectorOptions
 
     public double MinimumAffectedTileRatio { get; init; } = 0.03;
 
+    public bool RedFlashDetectionEnabled { get; init; } = true;
+
+    public double RedDominanceThreshold { get; init; } = 0.35;
+
+    public double RedDominantPixelRatioThreshold { get; init; } = 0.35;
+
     public TimeSpan Cooldown { get; init; } = TimeSpan.FromMilliseconds(650);
 
     public double MaximumOpacity { get; init; } = 0.62;

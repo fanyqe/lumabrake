@@ -5,4 +5,6 @@ public sealed record TileLuminanceStats(
     int Row,
     double AverageLuminance,
     double Percentile95Luminance,
-    double BrightPixelRatio);
+    double BrightPixelRatio,
+    double AverageRedDominance = 0,
+    double RedDominantPixelRatio = 0);

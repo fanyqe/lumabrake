@@ -1,12 +1,13 @@
-using LumaBrake.Domain.Color;
-using LumaBrake.Domain.Frames;
 using LumaBrake.Analysis.Luminance;
+using LumaBrake.Domain.Frames;
 
 namespace LumaBrake.Analysis.Frames;
 
 public sealed class Bgra32FrameAnalyzer
 {
     private const double BrightPixelThreshold = 0.72;
+    private const double RedDominancePixelThreshold = 0.35;
+    private const double RedDominanceMinimumRedChannel = 0.45;
     private readonly int _tileColumns;
     private readonly int _tileRows;
 
@@ -53,10 +54,13 @@ public sealed class Bgra32FrameAnalyzer
             {
                 var pixelIndex = (yPosition * metadata.Width) + xPosition;
                 var offset = pixelIndex * 4;
-                var y = SRgbLuminance.FromRgb(new Rgb24(
-                    bgraPixels[offset + 2],
-                    bgraPixels[offset + 1],
-                    bgraPixels[offset]));
+                var blue = SRgbLuminance.ToLinear(bgraPixels[offset] / 255.0);
+                var green = SRgbLuminance.ToLinear(bgraPixels[offset + 1] / 255.0);
+                var red = SRgbLuminance.ToLinear(bgraPixels[offset + 2] / 255.0);
+                var y = (0.2126 * red) + (0.7152 * green) + (0.0722 * blue);
+                var redDominance = Math.Clamp(red - Math.Max(green, blue), 0, 1);
+                var isRedDominant = red >= RedDominanceMinimumRedChannel &&
+                    redDominance >= RedDominancePixelThreshold;
 
                 luminanceValues[pixelIndex] = y;
                 total += y;
@@ -69,7 +73,7 @@ public sealed class Bgra32FrameAnalyzer
 
                 var tileColumn = Math.Min((xPosition * tileColumns) / metadata.Width, tileColumns - 1);
                 var tileRow = Math.Min((yPosition * tileRows) / metadata.Height, tileRows - 1);
-                tileValues[(tileRow * tileColumns) + tileColumn].Add(y);
+                tileValues[(tileRow * tileColumns) + tileColumn].Add(y, redDominance, isRedDominant);
             }
         }
 
@@ -85,25 +89,26 @@ public sealed class Bgra32FrameAnalyzer
             CreateTileSummary(tileColumns, tileRows, tileValues));
     }
 
-    private static List<double>[] CreateTileBuckets(int tileCount)
+    private static TileBucket[] CreateTileBuckets(int tileCount)
     {
-        var buckets = new List<double>[tileCount];
+        var buckets = new TileBucket[tileCount];
         for (var index = 0; index < tileCount; index++)
         {
-            buckets[index] = [];
+            buckets[index] = new TileBucket();
         }
 
         return buckets;
     }
 
-    private static FrameTileSummary CreateTileSummary(int columns, int rows, IReadOnlyList<List<double>> tileValues)
+    private static FrameTileSummary CreateTileSummary(int columns, int rows, IReadOnlyList<TileBucket> tileValues)
     {
         var tiles = new List<TileLuminanceStats>(tileValues.Count);
         for (var row = 0; row < rows; row++)
         {
             for (var column = 0; column < columns; column++)
             {
-                var values = tileValues[(row * columns) + column];
+                var bucket = tileValues[(row * columns) + column];
+                var values = bucket.LuminanceValues;
                 values.Sort();
                 var brightPixels = values.Count(value => value >= BrightPixelThreshold);
                 tiles.Add(new TileLuminanceStats(
@@ -111,7 +116,9 @@ public sealed class Bgra32FrameAnalyzer
                     row,
                     values.Average(),
                     Percentile95(values),
-                    brightPixels / (double)values.Count));
+                    brightPixels / (double)values.Count,
+                    bucket.AverageRedDominance,
+                    bucket.RedDominantPixelRatio));
             }
         }
 
@@ -122,5 +129,30 @@ public sealed class Bgra32FrameAnalyzer
     {
         var index = (int)Math.Clamp(Math.Ceiling(sortedValues.Count * 0.95) - 1, 0, sortedValues.Count - 1);
         return sortedValues[index];
+    }
+
+    private sealed class TileBucket
+    {
+        private double _redDominanceTotal;
+        private int _redDominantPixels;
+
+        public List<double> LuminanceValues { get; } = [];
+
+        public double AverageRedDominance =>
+            LuminanceValues.Count == 0 ? 0 : _redDominanceTotal / LuminanceValues.Count;
+
+        public double RedDominantPixelRatio =>
+            LuminanceValues.Count == 0 ? 0 : _redDominantPixels / (double)LuminanceValues.Count;
+
+        public void Add(double luminance, double redDominance, bool isRedDominant)
+        {
+            LuminanceValues.Add(luminance);
+            _redDominanceTotal += redDominance;
+
+            if (isRedDominant)
+            {
+                _redDominantPixels++;
+            }
+        }
     }
 }

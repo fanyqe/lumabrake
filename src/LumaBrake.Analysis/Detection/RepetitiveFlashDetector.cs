@@ -25,27 +25,36 @@ public sealed class RepetitiveFlashDetector
         }
 
         var affectedTiles = 0;
+        var redDominantTiles = 0;
         var maxTransitionCount = 0;
         var affectedRegions = new List<EffectRegion>();
 
         for (var index = 0; index < summary.Tiles.Count; index++)
         {
             var tile = summary.Tiles[index];
-            var currentLevel = Classify(tile);
-            var state = StateFor(index, tile.AverageLuminance, currentLevel);
+            var current = Classify(tile);
+            var state = StateFor(index, current);
 
             PruneTransitions(state, frame.Metadata.CapturedAt);
-            if (IsTransition(state, currentLevel, tile.AverageLuminance))
+            if (IsTransition(state, current))
             {
-                state.Transitions.Enqueue(frame.Metadata.CapturedAt);
+                state.Transitions.Enqueue(new TileFlashTransition(
+                    frame.Metadata.CapturedAt,
+                    current.IsRedDominant || state.PreviousRedDominant));
             }
 
-            state.PreviousLevel = currentLevel;
-            state.PreviousAverage = tile.AverageLuminance;
+            state.PreviousLevel = current.Level;
+            state.PreviousSignal = current.Signal;
+            state.PreviousRedDominant = current.IsRedDominant;
 
             if (state.Transitions.Count >= Options.MinimumTransitions)
             {
                 affectedTiles++;
+                if (state.Transitions.Any(transition => transition.IsRedDominant))
+                {
+                    redDominantTiles++;
+                }
+
                 maxTransitionCount = Math.Max(maxTransitionCount, state.Transitions.Count);
                 affectedRegions.Add(TileRegion(tile, summary));
             }
@@ -75,7 +84,8 @@ public sealed class RepetitiveFlashDetector
             affectedRatio,
             maxTransitionCount,
             opacity,
-            affectedRegions);
+            affectedRegions,
+            redDominantTiles);
     }
 
     private static EffectRegion TileRegion(TileLuminanceStats tile, FrameTileSummary summary)
@@ -85,52 +95,71 @@ public sealed class RepetitiveFlashDetector
         return new EffectRegion(tile.Column * width, tile.Row * height, width, height);
     }
 
-    private TileFlashState StateFor(int index, double average, TileFlashLevel level)
+    private TileFlashState StateFor(int index, TileFlashClassification classification)
     {
         if (_tiles.TryGetValue(index, out var state))
         {
             return state;
         }
 
-        state = new TileFlashState(level, average);
+        state = new TileFlashState(classification);
         _tiles[index] = state;
         return state;
     }
 
-    private TileFlashLevel Classify(TileLuminanceStats tile)
+    private TileFlashClassification Classify(TileLuminanceStats tile)
     {
+        if (Options.RedFlashDetectionEnabled &&
+            tile.AverageRedDominance >= Options.RedDominanceThreshold &&
+            tile.RedDominantPixelRatio >= Options.RedDominantPixelRatioThreshold)
+        {
+            return new TileFlashClassification(
+                TileFlashLevel.Bright,
+                Math.Max(tile.AverageRedDominance, tile.AverageLuminance),
+                IsRedDominant: true);
+        }
+
         if (tile.AverageLuminance >= Options.BrightTileAverageThreshold ||
             tile.BrightPixelRatio >= Options.BrightTilePixelRatioThreshold)
         {
-            return TileFlashLevel.Bright;
+            return new TileFlashClassification(TileFlashLevel.Bright, tile.AverageLuminance, IsRedDominant: false);
         }
 
         if (tile.AverageLuminance <= Options.DarkTileAverageThreshold)
         {
-            return TileFlashLevel.Dark;
+            return new TileFlashClassification(TileFlashLevel.Dark, tile.AverageLuminance, IsRedDominant: false);
         }
 
-        return TileFlashLevel.Neutral;
+        return new TileFlashClassification(TileFlashLevel.Neutral, tile.AverageLuminance, IsRedDominant: false);
     }
 
-    private bool IsTransition(TileFlashState state, TileFlashLevel currentLevel, double currentAverage)
+    private bool IsTransition(TileFlashState state, TileFlashClassification current)
     {
-        if (currentLevel is TileFlashLevel.Neutral || state.PreviousLevel is TileFlashLevel.Neutral)
+        if (current.Level is TileFlashLevel.Neutral || state.PreviousLevel is TileFlashLevel.Neutral)
         {
             return false;
         }
 
-        return currentLevel != state.PreviousLevel &&
-            Math.Abs(currentAverage - state.PreviousAverage) >= Options.MinimumTransitionDelta;
+        return current.Level != state.PreviousLevel &&
+            Math.Abs(current.Signal - state.PreviousSignal) >= Options.MinimumTransitionDelta;
     }
 
     private void PruneTransitions(TileFlashState state, DateTimeOffset now)
     {
-        while (state.Transitions.Count > 0 && now - state.Transitions.Peek() > Options.Window)
+        while (state.Transitions.Count > 0 && now - state.Transitions.Peek().Timestamp > Options.Window)
         {
             state.Transitions.Dequeue();
         }
     }
+
+    private readonly record struct TileFlashClassification(
+        TileFlashLevel Level,
+        double Signal,
+        bool IsRedDominant);
+
+    private readonly record struct TileFlashTransition(
+        DateTimeOffset Timestamp,
+        bool IsRedDominant);
 
     private enum TileFlashLevel
     {
@@ -141,16 +170,19 @@ public sealed class RepetitiveFlashDetector
 
     private sealed class TileFlashState
     {
-        public TileFlashState(TileFlashLevel previousLevel, double previousAverage)
+        public TileFlashState(TileFlashClassification previous)
         {
-            PreviousLevel = previousLevel;
-            PreviousAverage = previousAverage;
+            PreviousLevel = previous.Level;
+            PreviousSignal = previous.Signal;
+            PreviousRedDominant = previous.IsRedDominant;
         }
 
         public TileFlashLevel PreviousLevel { get; set; }
 
-        public double PreviousAverage { get; set; }
+        public double PreviousSignal { get; set; }
 
-        public Queue<DateTimeOffset> Transitions { get; } = new();
+        public bool PreviousRedDominant { get; set; }
+
+        public Queue<TileFlashTransition> Transitions { get; } = new();
     }
 }
