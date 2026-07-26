@@ -50,7 +50,8 @@
 - Guarded one-shot hardware brightness writes.
 - Initial CLI startup schedule restoration.
 - Initial runtime scheduled software dimming.
-- Profile integration and richer schedule editing.
+- Initial software profile save/apply CLI.
+- Richer schedule editing.
 
 ## 0.8.0 - Focus Dimming and Tint
 

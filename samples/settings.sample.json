@@ -39,5 +39,28 @@
     "opacity": 0.16,
     "hold": "00:00:00.1500000",
     "release": "00:00:00.5000000"
+  },
+  "profiles": {
+    "entries": [
+      {
+        "id": "evening",
+        "name": "Evening",
+        "userMaximumOpacity": 0.64,
+        "manualDimmingOpacity": 0.25,
+        "tint": {
+          "enabled": true,
+          "red": 255,
+          "green": 214,
+          "blue": 170,
+          "opacity": 0.1
+        },
+        "focusDimming": {
+          "enabled": true,
+          "opacity": 0.2,
+          "hold": "00:00:00.1500000",
+          "release": "00:00:00.5000000"
+        }
+      }
+    ]
   }
 }

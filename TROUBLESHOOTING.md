@@ -62,6 +62,18 @@ dotnet run --project src/LumaBrake.Cli -- status
 dotnet run --project src/LumaBrake.Cli -- monitor list
 ```
 
+## Profiles
+
+Profiles save software dimming settings for reuse:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- profile save evening Evening Work
+dotnet run --project src/LumaBrake.Cli -- profile list
+dotnet run --project src/LumaBrake.Cli -- profile apply evening
+```
+
+Profile apply updates persisted settings. Restart the dashboard if it is already running and you need the WPF app to load those persisted changes.
+
 ## Hardware Brightness
 
 Read DDC/CI capability and brightness diagnostics:

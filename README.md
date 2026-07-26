@@ -2,7 +2,7 @@
 
 LumaBrake is an open-source Windows utility that analyzes screen luminance in real time and reduces sudden brightness spikes, repetitive flashes, static bright regions, and unnecessary brightness on inactive displays.
 
-The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, focus dimming, optional tint, DDC/CI hardware brightness diagnostics with guarded one-shot writes, and initial runtime schedules:
+The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, focus dimming, optional tint, DDC/CI hardware brightness diagnostics with guarded one-shot writes, software profiles, and initial runtime schedules:
 
 - processing stays local;
 - raw screen samples are discarded after analysis;
@@ -35,7 +35,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Focus Dimming | Initial active-window monitor dimming implemented |
 | Optional Tint | Basic CLI-controlled tint implemented |
 | Hardware Brightness | Read-only DDC/CI diagnostics and guarded one-shot CLI writes implemented |
-| Profiles, rules, schedules | Initial CLI schedule, startup restoration, and runtime scheduled dimming implemented |
+| Profiles, rules, schedules | Initial software profiles, CLI schedule, startup restoration, and runtime scheduled dimming implemented |
 
 ## Build
 
@@ -77,6 +77,9 @@ dotnet run --project src/LumaBrake.Cli -- hardware writes status
 dotnet run --project src/LumaBrake.Cli -- hardware blacklist add "\\.\DISPLAY2"
 dotnet run --project src/LumaBrake.Cli -- schedule night 22:00 07:00 24 warm 18
 dotnet run --project src/LumaBrake.Cli -- schedule list
+dotnet run --project src/LumaBrake.Cli -- profile save evening Evening Work
+dotnet run --project src/LumaBrake.Cli -- profile list
+dotnet run --project src/LumaBrake.Cli -- profile apply evening
 dotnet run --project src/LumaBrake.Cli -- startup-restore status
 dotnet run --project src/LumaBrake.Cli -- diagnostics export
 ```
@@ -86,3 +89,5 @@ dotnet run --project src/LumaBrake.Cli -- diagnostics export
 The overlay is click-through, non-activating, hidden from the taskbar, and asks Windows to exclude it from capture where supported. If capture or analysis fails, the controller clears active dimming before retrying.
 
 Hardware brightness writes are not used by the runtime overlay loop. The CLI write path is a one-shot administrative command: it is disabled by default, targets one display device plus one physical monitor index, honors the blacklist and durable write interval, and also requires `--confirm-hardware-write` on each write command.
+
+Profiles capture only software-facing dimming settings: maximum opacity, manual dimming, tint, and focus dimming. Applying a profile from the CLI updates persisted settings and intentionally leaves hardware brightness, schedules, startup restoration, and the global enabled flag unchanged.

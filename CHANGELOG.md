@@ -25,3 +25,4 @@
 - Added runtime scheduled dimming as a low-priority effect.
 - Added guarded one-shot hardware brightness write commands with opt-in settings, per-command confirmation, physical monitor targeting, blacklist checks, safe-mode clearing, and durable write interval state.
 - Added default-disabled focus dimming that uses the foreground window's monitor to dim other monitors at low priority.
+- Added CLI software profiles for saving, listing, applying, and removing reusable dimming, tint, and focus settings.

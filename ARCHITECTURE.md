@@ -12,7 +12,7 @@ LumaBrake is a native Windows desktop application split into testable domain log
 - `LumaBrake.Rendering`: click-through overlay windows, one per active monitor.
 - `LumaBrake.MonitorControl`: DDC/CI capability, brightness read, and guarded one-shot brightness write interop for physical monitors.
 - `LumaBrake.Platform.Windows`: Win32 interop for hotkeys, capture, monitor bounds, foreground-window monitor ownership, and overlay styles.
-- `LumaBrake.Persistence`: local JSON settings with atomic replace.
+- `LumaBrake.Persistence`: local JSON settings, software profiles, and atomic replace.
 - `LumaBrake.Diagnostics`: pipeline snapshots for UI and future export.
 - `LumaBrake.Cli`: automation entry point for basic settings.
 
@@ -20,7 +20,7 @@ LumaBrake is a native Windows desktop application split into testable domain log
 
 ```text
 Each active monitor
-  -> startup restoration applies persisted software dimming, tint, or active schedule once
+  -> startup restoration applies persisted software dimming, tint, profile-applied settings, or active schedule once
   -> GDI downscaled BGRA capture (160 x 90)
   -> sRGB-to-linear luminance calculation
   -> global average / p95 / bright pixel ratio / tile luminance summary
@@ -164,3 +164,11 @@ Decision: resolve the monitor that owns the current foreground window once per c
 Reason: foreground-window ownership is a local Windows signal and can dim unused monitors without inspecting screen content or persisting raw frames. The effect must stay below spike, flash, static, inactive, and adaptive protection so safety responses remain the reported active reason.
 
 Consequence: Phase 13 has default-disabled focus dimming with CLI controls and testable provider injection. Future work still needs richer app/window rules, cursor-aware behavior, and per-monitor profiles.
+
+## ADR-0017: Initial Software Profiles
+
+Decision: store named profiles as persisted software settings snapshots that include maximum software opacity, manual dimming, tint, and focus dimming only.
+
+Reason: profiles should make day-to-day overlay behavior repeatable without changing global enablement, schedules, startup restoration, or physical monitor brightness.
+
+Consequence: Phase 14 has CLI save, list, apply, and remove commands for software profiles. Applying a profile updates persisted settings; live dashboard reload, hardware profile targets, per-monitor profiles, and richer editors remain future work.
