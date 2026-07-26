@@ -20,6 +20,7 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Equal(0.64, settings.UserMaximumOpacity, precision: 12);
         Assert.Equal(0, settings.ManualDimmingOpacity, precision: 12);
         Assert.False(settings.Tint.Enabled);
+        Assert.Empty(settings.MonitorTints.Entries);
         Assert.False(settings.Schedules.Enabled);
         Assert.Empty(settings.Schedules.Entries);
         Assert.True(settings.StartupRestoration.Enabled);
@@ -54,6 +55,17 @@ public sealed class SettingsStoreTests : IDisposable
                         EndMinuteOfDay = 7 * 60,
                         ManualDimmingOpacity = 0.22,
                         Tint = new TintOptions { Enabled = true, Opacity = 0.10 }
+                    }
+                ]
+            },
+            MonitorTints = new MonitorTintOptions
+            {
+                Entries =
+                [
+                    new MonitorTintOverride
+                    {
+                        MonitorId = @"\\.\DISPLAY2",
+                        Tint = new TintOptions { Enabled = true, Opacity = 0.16 }
                     }
                 ]
             },
@@ -93,6 +105,9 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Equal("night", schedule.Id);
         Assert.Equal(0.22, schedule.ManualDimmingOpacity, precision: 12);
         Assert.True(schedule.Tint.Enabled);
+        var monitorTint = Assert.Single(loaded.MonitorTints.Entries);
+        Assert.Equal(@"\\.\DISPLAY2", monitorTint.MonitorId);
+        Assert.Equal(0.16, monitorTint.Tint.Opacity, precision: 12);
         Assert.True(loaded.FocusDimming.Enabled);
         Assert.Equal(0.18, loaded.FocusDimming.Opacity, precision: 12);
         var profile = Assert.Single(loaded.Profiles.Entries);
@@ -125,6 +140,7 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Equal(0.12, loaded.ManualDimmingOpacity, precision: 12);
         Assert.False(loaded.Schedules.Enabled);
         Assert.Empty(loaded.Schedules.Entries);
+        Assert.Empty(loaded.MonitorTints.Entries);
         Assert.True(loaded.StartupRestoration.Enabled);
         Assert.False(loaded.FocusDimming.Enabled);
         Assert.Equal(0.16, loaded.FocusDimming.Opacity, precision: 12);

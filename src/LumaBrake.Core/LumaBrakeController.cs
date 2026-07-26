@@ -380,7 +380,8 @@ public sealed class LumaBrakeController : IDisposable
                         TimeSpan.Zero));
                 }
 
-                final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity, EffectiveTint(Settings.Tint, activeSchedule));
+                var monitorTint = Settings.MonitorTints.FindForMonitor(current.Monitor)?.Tint;
+                final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity, EffectiveTint(Settings.Tint, monitorTint, activeSchedule));
                 current.LastOpacity = final.GlobalOpacity;
                 current.LastReason = final.GlobalReason;
                 current.LastRegionalMaskCount = final.RegionalMasks.Count;
@@ -445,12 +446,15 @@ public sealed class LumaBrakeController : IDisposable
         return Math.Clamp(1 - ((1 - target) / (1 - current)), 0, 0.90);
     }
 
-    private static TintEffect EffectiveTint(TintOptions baseTint, ScheduledEffect? activeSchedule)
+    private static TintEffect EffectiveTint(TintOptions baseTint, TintOptions? monitorTint, ScheduledEffect? activeSchedule)
     {
         var scheduledTint = activeSchedule?.Tint.ToEffect();
-        return scheduledTint is { Enabled: true }
-            ? scheduledTint
-            : baseTint.ToEffect();
+        if (scheduledTint is { Enabled: true })
+        {
+            return scheduledTint;
+        }
+
+        return monitorTint is null ? baseTint.ToEffect() : monitorTint.ToEffect();
     }
 
     private void PublishSnapshot()

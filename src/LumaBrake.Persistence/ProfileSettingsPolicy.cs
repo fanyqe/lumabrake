@@ -12,6 +12,7 @@ public static class ProfileSettingsPolicy
             UserMaximumOpacity = settings.UserMaximumOpacity,
             ManualDimmingOpacity = settings.ManualDimmingOpacity,
             Tint = settings.Tint,
+            MonitorTints = settings.MonitorTints,
             FocusDimming = settings.FocusDimming
         }.Clamp();
 
@@ -23,6 +24,7 @@ public static class ProfileSettingsPolicy
             UserMaximumOpacity = applied.UserMaximumOpacity,
             ManualDimmingOpacity = applied.ManualDimmingOpacity,
             Tint = applied.Tint,
+            MonitorTints = applied.MonitorTints,
             FocusDimming = applied.FocusDimming
         };
     }

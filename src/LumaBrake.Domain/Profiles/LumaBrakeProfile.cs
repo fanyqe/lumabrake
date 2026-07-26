@@ -15,6 +15,8 @@ public sealed record LumaBrakeProfile
 
     public TintOptions Tint { get; init; } = new();
 
+    public MonitorTintOptions MonitorTints { get; init; } = new();
+
     public FocusDimmingOptions FocusDimming { get; init; } = new();
 
     public LumaBrakeProfile Clamp()
@@ -29,6 +31,7 @@ public sealed record LumaBrakeProfile
             UserMaximumOpacity = Math.Clamp(UserMaximumOpacity, 0.05, 0.92),
             ManualDimmingOpacity = Math.Clamp(ManualDimmingOpacity, 0, 0.90),
             Tint = Tint.ToEffect().Enabled ? ClampTint(Tint) : new TintOptions { Enabled = false },
+            MonitorTints = MonitorTints.Clamp(),
             FocusDimming = FocusDimming.Clamp()
         };
     }

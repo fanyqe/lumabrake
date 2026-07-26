@@ -16,6 +16,17 @@ public sealed class ProfileOptionsTests
             UserMaximumOpacity = 2,
             ManualDimmingOpacity = -1,
             Tint = new TintOptions { Enabled = true, Red = 255, Green = 214, Blue = 244, Opacity = 3 },
+            MonitorTints = new MonitorTintOptions
+            {
+                Entries =
+                [
+                    new MonitorTintOverride
+                    {
+                        MonitorId = "  monitor-1  ",
+                        Tint = new TintOptions { Enabled = true, Opacity = 2 }
+                    }
+                ]
+            },
             FocusDimming = new FocusDimmingOptions { Enabled = true, Opacity = 2 }
         }.Clamp();
 
@@ -27,6 +38,9 @@ public sealed class ProfileOptionsTests
         Assert.Equal(255, profile.Tint.Red);
         Assert.Equal(214, profile.Tint.Green);
         Assert.Equal(0.60, profile.Tint.Opacity, precision: 12);
+        var monitorTint = Assert.Single(profile.MonitorTints.Entries);
+        Assert.Equal("monitor-1", monitorTint.MonitorId);
+        Assert.Equal(0.60, monitorTint.Tint.Opacity, precision: 12);
         Assert.True(profile.FocusDimming.Enabled);
         Assert.Equal(0.60, profile.FocusDimming.Opacity, precision: 12);
     }

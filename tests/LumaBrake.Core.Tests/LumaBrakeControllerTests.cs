@@ -555,6 +555,101 @@ public sealed class LumaBrakeControllerTests
     }
 
     [Fact]
+    public async Task Start_RendersMonitorTintOnlyOnMatchingMonitor()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                MonitorTints = new MonitorTintOptions
+                {
+                    Entries =
+                    [
+                        new MonitorTintOverride
+                        {
+                            MonitorId = monitors[1].StableId,
+                            Tint = new TintOptions { Enabled = true, Red = 255, Green = 244, Blue = 230, Opacity = 0.22 }
+                        }
+                    ]
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var tintRendered = await WaitUntilAsync(
+            () =>
+            {
+                var primary = overlay.LastEffect(monitors[0].StableId);
+                var secondary = overlay.LastEffect(monitors[1].StableId);
+                return primary is not null &&
+                    secondary is not null &&
+                    !primary.Tint.Enabled &&
+                    secondary.Tint.Enabled &&
+                    Math.Abs(secondary.Tint.Opacity - 0.22) < 0.001;
+            },
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(tintRendered);
+    }
+
+    [Fact]
+    public async Task Start_UsesScheduleTintBeforeMonitorTint()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                MonitorTints = new MonitorTintOptions
+                {
+                    Entries =
+                    [
+                        new MonitorTintOverride
+                        {
+                            MonitorId = monitors[1].StableId,
+                            Tint = new TintOptions { Enabled = true, Opacity = 0.22 }
+                        }
+                    ]
+                },
+                Schedules = new ScheduleOptions
+                {
+                    Enabled = true,
+                    Entries =
+                    [
+                        ActiveSchedule(0.18, new TintOptions { Enabled = true, Red = 255, Green = 214, Blue = 170, Opacity = 0.16 })
+                    ]
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var scheduleTintRendered = await WaitUntilAsync(
+            () => monitors.All(monitor =>
+            {
+                var effect = overlay.LastEffect(monitor.StableId);
+                return effect is not null &&
+                    effect.Tint.Enabled &&
+                    Math.Abs(effect.Tint.Opacity - 0.16) < 0.001;
+            }),
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(scheduleTintRendered);
+    }
+
+    [Fact]
     public async Task Start_AppliesActiveScheduleAsRuntimeEffect()
     {
         var monitors = TestMonitors();

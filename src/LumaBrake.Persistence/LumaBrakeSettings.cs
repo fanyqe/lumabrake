@@ -28,6 +28,8 @@ public sealed record LumaBrakeSettings
 
     public TintOptions Tint { get; init; } = new();
 
+    public MonitorTintOptions MonitorTints { get; init; } = new();
+
     public ScheduleOptions Schedules { get; init; } = new();
 
     public ProfileOptions Profiles { get; init; } = new();
