@@ -313,6 +313,25 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Equal(expected, SafeModeSettings.IsRequested([argument]));
     }
 
+    [Theory]
+    [InlineData("--background", true)]
+    [InlineData("--minimized", true)]
+    [InlineData("--tray", true)]
+    [InlineData("--other", false)]
+    public void AppLaunchOptions_DetectsBackgroundStartupArgument(string argument, bool expected)
+    {
+        Assert.Equal(expected, AppLaunchOptions.FromArgs([argument]).StartInBackground);
+    }
+
+    [Fact]
+    public void AppLaunchOptions_KeepsSafeModeAndBackgroundIndependent()
+    {
+        var options = AppLaunchOptions.FromArgs(["--safe-mode", "--background"]);
+
+        Assert.True(options.SafeModeRequested);
+        Assert.True(options.StartInBackground);
+    }
+
     [Fact]
     public void HardwareBrightnessStateStore_RoundTripsWriteAttemptsCaseInsensitively()
     {

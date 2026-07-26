@@ -19,9 +19,11 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
+        var launchOptions = AppLaunchOptions.FromArgs(e.Args);
         var settings = _settingsStore.Load();
-        if (SafeModeSettings.IsRequested(e.Args))
+        if (launchOptions.SafeModeRequested)
         {
             settings = SafeModeSettings.Apply(settings);
             _settingsStore.Save(settings);
@@ -41,10 +43,13 @@ public partial class App : System.Windows.Application
         _controller.Start();
 
         _dashboard = new MainWindow(_controller, _settingsStore);
-        _dashboard.Show();
 
         CreateTrayIcon();
         TryRegisterEmergencyHotkey();
+        if (!launchOptions.StartInBackground)
+        {
+            _dashboard.Show();
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

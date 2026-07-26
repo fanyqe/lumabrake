@@ -45,6 +45,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumaBrake.Diagnostics.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumaBrake.MonitorControl.Tests", "tests\LumaBrake.MonitorControl.Tests\LumaBrake.MonitorControl.Tests.csproj", "{2C1C5584-E34E-4A42-91F1-FCB9D4232370}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumaBrake.Platform.Windows.Tests", "tests\LumaBrake.Platform.Windows.Tests\LumaBrake.Platform.Windows.Tests.csproj", "{51843E48-7EB1-43FC-BC25-E47DF5D9470C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -283,6 +285,18 @@ Global
 		{2C1C5584-E34E-4A42-91F1-FCB9D4232370}.Release|x64.Build.0 = Release|Any CPU
 		{2C1C5584-E34E-4A42-91F1-FCB9D4232370}.Release|x86.ActiveCfg = Release|Any CPU
 		{2C1C5584-E34E-4A42-91F1-FCB9D4232370}.Release|x86.Build.0 = Release|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Debug|x64.Build.0 = Debug|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Debug|x86.Build.0 = Debug|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Release|x64.ActiveCfg = Release|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Release|x64.Build.0 = Release|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Release|x86.ActiveCfg = Release|Any CPU
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -307,5 +321,6 @@ Global
 		{B1A83148-1333-4577-8473-E285A663B73D} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{0225D88D-779E-4EA3-B36C-0B489A01E819} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{2C1C5584-E34E-4A42-91F1-FCB9D4232370} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{51843E48-7EB1-43FC-BC25-E47DF5D9470C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
