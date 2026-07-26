@@ -21,6 +21,7 @@ LumaBrake is a native Windows desktop application split into testable domain log
 ```text
 Each active monitor
   -> startup restoration applies persisted software dimming, tint, profile-applied settings, or active schedule once
+  -> periodic monitor topology refresh adds, updates, or removes per-monitor pipelines
   -> GDI downscaled BGRA capture (160 x 90)
   -> sRGB-to-linear luminance calculation
   -> global average / p95 / bright pixel ratio / tile luminance and red-dominance summary
@@ -60,7 +61,7 @@ Decision: Phase 3 begins with Win32 `EnumDisplayMonitors` and `GetMonitorInfo` e
 
 Reason: the product needs stable monitor identity, bounds, work area, and primary/secondary state before per-monitor capture sessions and overlays are expanded.
 
-Consequence: hot-plug event subscriptions and persistent monitor matching are still future work, but CLI, UI, capture, and rendering now use the same monitor source.
+Consequence: runtime topology polling can add, update, or remove per-monitor pipelines while the app is running. Windows display-change event subscriptions and persistent monitor matching are still future work, but CLI, UI, capture, and rendering now use the same monitor source.
 
 ## ADR-0004: Basic Per-Monitor Runtime
 
@@ -189,3 +190,11 @@ Decision: store per-monitor tint overrides keyed by monitor stable id or display
 Reason: the renderer already receives one `FinalEffectState` per monitor, so per-monitor tint can be added without changing overlay rendering, capture, detector math, or the effect composer contract.
 
 Consequence: Phase 16 has CLI-managed per-monitor tint overrides. Active schedule tint keeps priority over monitor overrides to preserve existing schedule behavior; if no schedule tint is active, monitor tint overrides global tint, including an explicit `off` override. Global `tint off` does not clear monitor overrides. GUI tint controls, monitor override clear-all, and richer monitor identity recovery remain future work.
+
+## ADR-0020: Periodic Monitor Topology Refresh
+
+Decision: refresh the monitor catalog on a low-frequency controller interval and update pipelines plus overlay windows only when the topology changes.
+
+Reason: monitor reconnects, disconnects, resolution changes, orientation changes, and DPI changes should not require an application restart, but refreshing every frame would add unnecessary work and UI churn.
+
+Consequence: running sessions can recover from basic monitor add/remove/update events. A dedicated Windows display-change event path, richer reconnect identity matching, and hardware-brightness reconnect recovery remain future work.

@@ -52,6 +52,8 @@ dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
 ```
 
+The running dashboard refreshes the monitor topology periodically. Use `Refresh monitors` if you need an immediate manual refresh after changing displays.
+
 ## Focus Dimming
 
 Focus dimming is disabled by default. Enable it and adjust opacity from the CLI:

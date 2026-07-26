@@ -15,7 +15,7 @@
 - Display enumeration.
 - One overlay per physical monitor.
 - Per-monitor settings.
-- DPI/orientation/reconnect handling.
+- Initial DPI/orientation/reconnect topology refresh.
 
 ## 0.3.0 - Repetitive Flash Guard
 
