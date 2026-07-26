@@ -97,11 +97,11 @@ Consequence: Phase 6 now has a first working tile-mask path using one click-thro
 
 ## ADR-0008: Initial StaticShade Tile State
 
-Decision: track only per-tile luminance averages, bright-pixel ratios, and static duration for StaticShade instead of storing raw frames or screenshots.
+Decision: track only per-tile luminance averages, 95th percentile luminance, bright-pixel ratios, exposure score, and static duration for StaticShade instead of storing raw frames or screenshots.
 
-Reason: persistent bright UI regions can be detected deterministically from bounded tile metrics while preserving the privacy rule that screen content is not persisted.
+Reason: persistent bright UI regions can be detected deterministically from bounded tile metrics while preserving the privacy rule that screen content is not persisted. OLED-oriented presets tune the same bounded metrics without introducing screenshots, OCR, app inspection, or cloud processing.
 
-Consequence: Phase 7 has an initial localized dimming path for small bright static regions. Motion scoring, accumulated exposure scoring, OLED profiles, and full-screen intent detection remain future work.
+Consequence: Phase 7 has an exposure-scored localized dimming path for small bright static regions plus first CLI-applied StaticShade presets. Motion scoring, accumulated cross-session exposure memory, and full-screen intent detection remain future work.
 
 ## ADR-0009: Initial Adaptive Content Dimming
 

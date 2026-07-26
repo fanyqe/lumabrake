@@ -30,6 +30,26 @@
     "hold": "00:00:00.3200000",
     "release": "00:00:00.9500000"
   },
+  "staticShade": {
+    "enabled": true,
+    "minimumStaticDuration": "00:00:30",
+    "fullOpacityDuration": "00:03:00",
+    "maximumFrameGap": "00:00:02",
+    "brightTileAverageThreshold": 0.62,
+    "brightTilePercentile95Threshold": 0.72,
+    "brightTilePixelRatioThreshold": 0.35,
+    "maximumAverageDelta": 0.025,
+    "minimumAffectedTileRatio": 0.005,
+    "maximumAffectedTileRatio": 0.45,
+    "minimumExposureScore": 0.18,
+    "exposureLuminanceWeight": 0.45,
+    "exposureBrightPixelWeight": 0.25,
+    "exposureDurationWeight": 0.3,
+    "baseOpacity": 0.1,
+    "maximumOpacity": 0.32,
+    "hold": "00:00:00.5000000",
+    "release": "00:00:01.2000000"
+  },
   "hardwareBrightness": {
     "enabled": false,
     "allowWrites": false,

@@ -33,8 +33,8 @@
 ## 0.5.0 - StaticShade
 
 - Initial static bright tile detection.
-- Exposure scoring.
-- OLED profiles.
+- Initial exposure scoring.
+- Initial OLED, HUD, office, and disabled CLI presets.
 
 ## 0.6.0 - Adaptive and Inactive Dimming
 

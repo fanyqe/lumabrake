@@ -29,7 +29,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Local deterministic luminance analysis | Implemented |
 | Repetitive Flash Guard | Initial tile temporal and red-dominant detector with dashboard red-flash counters implemented |
 | Localized Flash Masking | Initial tile regional overlay implemented |
-| StaticShade | Initial static bright tile masking implemented |
+| StaticShade | Exposure-scored static bright tile masking with CLI OLED presets implemented |
 | Adaptive Content Dimming | Initial persistent bright-scene dimming implemented |
 | Inactive Monitor Dimming | Initial non-primary unchanged-frame dimming implemented |
 | Focus Dimming | Initial active-window monitor dimming implemented |
@@ -86,6 +86,9 @@ dotnet run --project src/LumaBrake.Cli -- schedule list
 dotnet run --project src/LumaBrake.Cli -- profile save evening Evening Work
 dotnet run --project src/LumaBrake.Cli -- profile list
 dotnet run --project src/LumaBrake.Cli -- profile apply evening
+dotnet run --project src/LumaBrake.Cli -- static-shade status
+dotnet run --project src/LumaBrake.Cli -- static-shade list
+dotnet run --project src/LumaBrake.Cli -- static-shade preset oled-conservative
 dotnet run --project src/LumaBrake.Cli -- startup-restore status
 dotnet run --project src/LumaBrake.Cli -- diagnostics export
 ```
@@ -99,3 +102,5 @@ Hardware brightness writes are not used by the runtime overlay loop. The CLI wri
 Profiles capture only software-facing dimming settings: maximum opacity, manual dimming, global tint, per-monitor tint, and focus dimming. Applying a profile from the CLI updates persisted settings and intentionally leaves hardware brightness, schedules, startup restoration, and the global enabled flag unchanged.
 
 Tint precedence is schedule tint, then per-monitor tint, then global tint. `tint off` clears only the global tint; use `tint monitor remove` to clear a monitor override.
+
+StaticShade presets write explicit detector settings into `staticShade`; no preset name is required in JSON. Use `oled-conservative` or `oled-aggressive` for OLED-focused protection, `static-hud` for small persistent HUDs, `office` for gentler document work, and `disabled` to turn the feature off.

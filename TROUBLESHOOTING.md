@@ -31,6 +31,18 @@ The flash detector uses tile-level luminance transitions and red-dominance trans
 
 The dashboard keeps the main protection-event total and appends a red-flash count when red-dominant events have been detected.
 
+## StaticShade Presets
+
+StaticShade detects persistent bright regions with bounded tile metrics and exposure scoring. Inspect or apply presets from the CLI:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- static-shade status
+dotnet run --project src/LumaBrake.Cli -- static-shade list
+dotnet run --project src/LumaBrake.Cli -- static-shade preset oled-conservative
+```
+
+Use `oled-aggressive` for earlier OLED-focused masking, `static-hud` for small persistent HUDs, `office` for gentler bright-document work, and `disabled` to turn StaticShade off.
+
 ## Build Uses The Wrong SDK
 
 Run:
