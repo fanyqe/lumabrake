@@ -29,8 +29,8 @@ public static class StartupRestorationPolicy
         var schedule = activeSchedule.Clamp();
         return settings with
         {
-            ManualDimmingOpacity = schedule.ManualDimmingOpacity,
-            Tint = ClampTint(schedule.Tint)
+            ManualDimmingOpacity = Math.Clamp(settings.ManualDimmingOpacity, 0, 0.90),
+            Tint = schedule.Tint.ToEffect().Enabled ? ClampTint(schedule.Tint) : ClampTint(settings.Tint)
         };
     }
 

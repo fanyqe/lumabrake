@@ -8,5 +8,6 @@ public enum EffectReason
     RepetitiveFlash = 30,
     StaticShade = 40,
     InactiveMonitor = 45,
-    AdaptiveContent = 50
+    AdaptiveContent = 50,
+    Scheduled = 60
 }

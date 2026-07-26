@@ -114,4 +114,20 @@ public sealed class EffectComposerTests
         Assert.Equal(0.40, state.GlobalOpacity, precision: 12);
         Assert.Equal(0.60, combinedRegionalAreaOpacity, precision: 12);
     }
+
+    [Fact]
+    public void Compose_TreatsScheduledDimmingAsLowerPriorityThanAdaptiveContent()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+
+        var state = new EffectComposer().Compose(
+            [
+                new EffectRequest(EffectReason.Scheduled, 0.20, now, TimeSpan.Zero, TimeSpan.Zero),
+                new EffectRequest(EffectReason.AdaptiveContent, 0.10, now, TimeSpan.Zero, TimeSpan.Zero)
+            ],
+            userMaximumOpacity: 0.90);
+
+        Assert.Equal(0.28, state.GlobalOpacity, precision: 3);
+        Assert.Equal(EffectReason.AdaptiveContent, state.GlobalReason);
+    }
 }

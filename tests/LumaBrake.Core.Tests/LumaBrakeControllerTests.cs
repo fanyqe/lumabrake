@@ -5,6 +5,7 @@ using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Frames;
 using LumaBrake.Domain.Monitors;
+using LumaBrake.Domain.Schedules;
 using LumaBrake.Persistence;
 using LumaBrake.Rendering;
 
@@ -395,6 +396,123 @@ public sealed class LumaBrakeControllerTests
         Assert.True(tintRendered);
     }
 
+    [Fact]
+    public async Task Start_AppliesActiveScheduleAsRuntimeEffect()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                Schedules = new ScheduleOptions
+                {
+                    Enabled = true,
+                    Entries =
+                    [
+                        ActiveSchedule(0.18, new TintOptions { Enabled = true, Red = 255, Green = 214, Blue = 170, Opacity = 0.16 })
+                    ]
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var scheduledEffectApplied = await WaitUntilAsync(
+            () => monitors.All(monitor =>
+            {
+                var effect = overlay.LastEffect(monitor.StableId);
+                return effect is not null &&
+                    effect.GlobalReason == EffectReason.Scheduled &&
+                    Math.Abs(effect.GlobalOpacity - 0.18) < 0.001 &&
+                    effect.Tint.Enabled &&
+                    Math.Abs(effect.Tint.Opacity - 0.16) < 0.001;
+            }),
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(scheduledEffectApplied);
+    }
+
+    [Fact]
+    public async Task Start_DoesNotDoubleApplyScheduleWhenManualDimmingAlreadyMatchesTarget()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                ManualDimmingOpacity = 0.18,
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                Schedules = new ScheduleOptions
+                {
+                    Enabled = true,
+                    Entries = [ActiveSchedule(0.18, new TintOptions { Enabled = false })]
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var opacityStable = await WaitUntilAsync(
+            () => monitors.All(monitor =>
+            {
+                var effect = overlay.LastEffect(monitor.StableId);
+                return effect is not null &&
+                    effect.GlobalReason == EffectReason.Manual &&
+                    Math.Abs(effect.GlobalOpacity - 0.18) < 0.001;
+            }),
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(opacityStable);
+    }
+
+    [Fact]
+    public async Task EmergencyDisable_PreventsActiveScheduleFromReturning()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                Schedules = new ScheduleOptions
+                {
+                    Enabled = true,
+                    Entries =
+                    [
+                        ActiveSchedule(0.18, new TintOptions { Enabled = true, Opacity = 0.16 })
+                    ]
+                }
+            },
+            new MutableMonitorCatalog(monitors));
+
+        controller.Start();
+
+        var scheduledEffectApplied = await WaitUntilAsync(
+            () => overlay.LastEffect(monitors[0].StableId)?.GlobalReason == EffectReason.Scheduled,
+            TimeSpan.FromSeconds(2));
+        Assert.True(scheduledEffectApplied);
+
+        controller.EmergencyDisable();
+        await Task.Delay(TimeSpan.FromMilliseconds(180));
+
+        Assert.False(controller.Settings.Enabled);
+        Assert.All(controller.Snapshot().Monitors, monitor => Assert.Equal(0, monitor.OverlayOpacity));
+        Assert.Equal(0, controller.Settings.ManualDimmingOpacity, precision: 12);
+    }
+
     private static MonitorDescriptor[] TestMonitors() =>
     [
         new(
@@ -414,6 +532,20 @@ public sealed class LumaBrakeControllerTests
             new MonitorBounds(160, 0, 160, 90),
             new MonitorBounds(160, 0, 160, 90))
     ];
+
+    private static ScheduledEffect ActiveSchedule(double opacity, TintOptions tint)
+    {
+        return new ScheduledEffect
+        {
+            Id = "test",
+            Name = "Test",
+            DayMask = ScheduleDayMask.EveryDay,
+            StartMinuteOfDay = 0,
+            EndMinuteOfDay = 1439,
+            ManualDimmingOpacity = opacity,
+            Tint = tint
+        };
+    }
 
     private static async Task<bool> WaitUntilAsync(Func<bool> condition, TimeSpan timeout)
     {

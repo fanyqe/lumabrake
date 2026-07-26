@@ -87,7 +87,7 @@ public sealed class SettingsStoreTests : IDisposable
     }
 
     [Fact]
-    public void StartupRestoration_AppliesActiveScheduleAtStartup()
+    public void StartupRestoration_AppliesActiveScheduleTintWithoutDuplicatingDimming()
     {
         var settings = new LumaBrakeSettings
         {
@@ -114,7 +114,7 @@ public sealed class SettingsStoreTests : IDisposable
             settings,
             new DateTimeOffset(2026, 7, 26, 23, 0, 0, TimeSpan.FromHours(3)));
 
-        Assert.Equal(0.24, restored.ManualDimmingOpacity, precision: 12);
+        Assert.Equal(0.05, restored.ManualDimmingOpacity, precision: 12);
         Assert.True(restored.Tint.Enabled);
         Assert.Equal(0.18, restored.Tint.Opacity, precision: 12);
     }

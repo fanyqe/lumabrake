@@ -6,6 +6,7 @@ using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Frames;
 using LumaBrake.Domain.Monitors;
+using LumaBrake.Domain.Schedules;
 using LumaBrake.Effects.Composition;
 using LumaBrake.Persistence;
 using LumaBrake.Rendering;
@@ -338,6 +339,7 @@ public sealed class LumaBrakeController : IDisposable
 
                 var now = DateTimeOffset.UtcNow;
                 var activeRequests = current.Envelope.ActiveAt(now).ToList();
+                var activeSchedule = Settings.Schedules.ActiveAt(now.ToLocalTime())?.Clamp();
                 if (Settings.ManualDimmingOpacity > 0)
                 {
                     activeRequests.Add(new EffectRequest(
@@ -348,7 +350,17 @@ public sealed class LumaBrakeController : IDisposable
                         TimeSpan.Zero));
                 }
 
-                final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity, Settings.Tint.ToEffect());
+                if (activeSchedule is not null && activeSchedule.ManualDimmingOpacity > 0)
+                {
+                    activeRequests.Add(new EffectRequest(
+                        EffectReason.Scheduled,
+                        ScheduledAdditionalOpacity(activeSchedule.ManualDimmingOpacity, Settings.ManualDimmingOpacity),
+                        now,
+                        TimeSpan.FromMilliseconds(100),
+                        TimeSpan.Zero));
+                }
+
+                final = _composer.Compose(activeRequests, Settings.UserMaximumOpacity, EffectiveTint(Settings.Tint, activeSchedule));
                 current.LastOpacity = final.GlobalOpacity;
                 current.LastReason = final.GlobalReason;
                 current.LastRegionalMaskCount = final.RegionalMasks.Count;
@@ -370,6 +382,26 @@ public sealed class LumaBrakeController : IDisposable
         }
 
         return pipeline.InactiveDetector.Observe(analysis);
+    }
+
+    private static double ScheduledAdditionalOpacity(double scheduledOpacity, double manualOpacity)
+    {
+        var target = Math.Clamp(scheduledOpacity, 0, 0.90);
+        var current = Math.Clamp(manualOpacity, 0, 0.90);
+        if (target <= current)
+        {
+            return 0;
+        }
+
+        return Math.Clamp(1 - ((1 - target) / (1 - current)), 0, 0.90);
+    }
+
+    private static TintEffect EffectiveTint(TintOptions baseTint, ScheduledEffect? activeSchedule)
+    {
+        var scheduledTint = activeSchedule?.Tint.ToEffect();
+        return scheduledTint is { Enabled: true }
+            ? scheduledTint
+            : baseTint.ToEffect();
     }
 
     private void PublishSnapshot()
