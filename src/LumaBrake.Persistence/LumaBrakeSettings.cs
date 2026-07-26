@@ -1,6 +1,7 @@
 using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Hardware;
+using LumaBrake.Domain.Profiles;
 using LumaBrake.Domain.Schedules;
 
 namespace LumaBrake.Persistence;
@@ -28,6 +29,8 @@ public sealed record LumaBrakeSettings
     public TintOptions Tint { get; init; } = new();
 
     public ScheduleOptions Schedules { get; init; } = new();
+
+    public ProfileOptions Profiles { get; init; } = new();
 
     public StartupRestorationOptions StartupRestoration { get; init; } = new();
 

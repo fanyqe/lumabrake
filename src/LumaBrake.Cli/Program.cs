@@ -23,6 +23,7 @@ switch (command)
             ? $"Tint: #{settings.Tint.Red:X2}{settings.Tint.Green:X2}{settings.Tint.Blue:X2} {Math.Round(settings.Tint.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%"
             : "Tint: off");
         Console.WriteLine($"Schedules: {(settings.Schedules.Enabled ? "enabled" : "disabled")}, {settings.Schedules.Entries.Length.ToString(CultureInfo.InvariantCulture)} configured");
+        Console.WriteLine($"Profiles: {settings.Profiles.Clamp().Entries.Length.ToString(CultureInfo.InvariantCulture)} saved");
         Console.WriteLine($"Startup restoration: {(settings.StartupRestoration.Enabled ? "enabled" : "disabled")}");
         var focusDimming = settings.FocusDimming.Clamp();
         Console.WriteLine($"Focus dimming: {(focusDimming.Enabled ? "enabled" : "disabled")} {Math.Round(focusDimming.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
@@ -89,6 +90,9 @@ switch (command)
 
     case "focus":
         return RunFocusCommand(args, store, settings);
+
+    case "profile":
+        return ProfileCliCommands.Run(args, store, settings);
 
     case "capture-test":
         var primaryMonitor = PrimaryMonitor.Get();
@@ -165,7 +169,7 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|focus <status|enable|disable|opacity>|capture-test|monitor list|hardware <list|brightness|writes|blacklist>|schedule <list|enable|disable|clear|night>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|focus <status|enable|disable|opacity>|profile <list|save|apply|remove>|capture-test|monitor list|hardware <list|brightness|writes|blacklist>|schedule <list|enable|disable|clear|night>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
         return 2;
 }
 

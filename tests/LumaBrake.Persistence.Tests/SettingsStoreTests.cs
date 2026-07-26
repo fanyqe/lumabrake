@@ -2,6 +2,7 @@ using LumaBrake.Persistence;
 using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Hardware;
+using LumaBrake.Domain.Profiles;
 using LumaBrake.Domain.Schedules;
 
 namespace LumaBrake.Persistence.Tests;
@@ -25,6 +26,7 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.True(settings.StartupRestoration.ApplySchedules);
         Assert.False(settings.FocusDimming.Enabled);
         Assert.Equal(0.16, settings.FocusDimming.Opacity, precision: 12);
+        Assert.Empty(settings.Profiles.Entries);
         Assert.False(settings.HardwareBrightness.Enabled);
         Assert.False(settings.HardwareBrightness.AllowWrites);
         Assert.Empty(settings.HardwareBrightness.BlacklistedDisplayDeviceNames);
@@ -60,6 +62,19 @@ public sealed class SettingsStoreTests : IDisposable
                 Enabled = true,
                 Opacity = 0.18
             },
+            Profiles = new ProfileOptions
+            {
+                Entries =
+                [
+                    new LumaBrakeProfile
+                    {
+                        Id = "work",
+                        Name = "Work",
+                        ManualDimmingOpacity = 0.20,
+                        FocusDimming = new FocusDimmingOptions { Enabled = true, Opacity = 0.16 }
+                    }
+                ]
+            },
             HardwareBrightness = new HardwareBrightnessOptions
             {
                 Enabled = true,
@@ -80,6 +95,10 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.True(schedule.Tint.Enabled);
         Assert.True(loaded.FocusDimming.Enabled);
         Assert.Equal(0.18, loaded.FocusDimming.Opacity, precision: 12);
+        var profile = Assert.Single(loaded.Profiles.Entries);
+        Assert.Equal("work", profile.Id);
+        Assert.Equal(0.20, profile.ManualDimmingOpacity, precision: 12);
+        Assert.True(profile.FocusDimming.Enabled);
         Assert.True(loaded.HardwareBrightness.Enabled);
         Assert.False(loaded.HardwareBrightness.AllowWrites);
         Assert.Equal([@"\\.\DISPLAY3"], loaded.HardwareBrightness.BlacklistedDisplayDeviceNames);
@@ -109,6 +128,7 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.True(loaded.StartupRestoration.Enabled);
         Assert.False(loaded.FocusDimming.Enabled);
         Assert.Equal(0.16, loaded.FocusDimming.Opacity, precision: 12);
+        Assert.Empty(loaded.Profiles.Entries);
         Assert.False(loaded.HardwareBrightness.Enabled);
         Assert.False(loaded.HardwareBrightness.AllowWrites);
     }
