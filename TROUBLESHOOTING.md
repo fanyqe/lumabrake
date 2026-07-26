@@ -18,6 +18,18 @@ dotnet run --project src/LumaBrake.Cli -- dim off
 
 Safe Mode also disables persisted hardware brightness write permission. Read-only hardware brightness diagnostics remain available from the CLI.
 
+## Windows Startup
+
+Register, inspect, or remove the current-user login startup entry from the published portable package folder:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- startup status
+dotnet run --project src/LumaBrake.Cli -- startup enable
+dotnet run --project src/LumaBrake.Cli -- startup disable
+```
+
+The startup entry runs `LumaBrake.App.exe --background`, which starts the controller and tray icon without opening the dashboard. `startup-restore` only controls restored dimming and schedule state after the app starts; it does not register Windows login startup.
+
 ## Overlay Does Not Appear
 
 - Confirm the app is enabled.

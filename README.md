@@ -11,6 +11,7 @@ The current working slices cover Brightness Spike Guard, an initial Repetitive F
 - click-through overlays apply software dimming on active Windows monitors;
 - active Windows monitors and DDC/CI hardware capabilities can be listed from the CLI;
 - hardware brightness writes are disabled by default and require settings opt-in, a physical monitor index, rate-limit clearance, and per-command confirmation;
+- Windows login startup can be registered from the CLI and starts the app in the tray;
 - `Ctrl+Alt+Shift+L` performs emergency disable;
 - corrupted local settings are quarantined and replaced with defaults;
 - protected content, HDR, exclusive full-screen apps, and GPU/display driver behavior may limit operation.
@@ -36,6 +37,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Optional Tint | Global, scheduled, and initial per-monitor CLI tint implemented |
 | Hardware Brightness | Read-only DDC/CI diagnostics and guarded one-shot CLI writes implemented |
 | Profiles, rules, schedules | Initial software profiles, editable CLI schedules, startup restoration, and runtime scheduled dimming implemented |
+| Windows startup | Initial per-user login startup registration implemented |
 
 ## Build
 
@@ -90,6 +92,9 @@ dotnet run --project src/LumaBrake.Cli -- static-shade status
 dotnet run --project src/LumaBrake.Cli -- static-shade list
 dotnet run --project src/LumaBrake.Cli -- static-shade preset oled-conservative
 dotnet run --project src/LumaBrake.Cli -- startup-restore status
+dotnet run --project src/LumaBrake.Cli -- startup status
+dotnet run --project src/LumaBrake.Cli -- startup enable
+dotnet run --project src/LumaBrake.Cli -- startup disable
 dotnet run --project src/LumaBrake.Cli -- diagnostics export
 ```
 
@@ -104,3 +109,5 @@ Profiles capture only software-facing dimming settings: maximum opacity, manual 
 Tint precedence is schedule tint, then per-monitor tint, then global tint. `tint off` clears only the global tint; use `tint monitor remove` to clear a monitor override.
 
 StaticShade presets write explicit detector settings into `staticShade`; no preset name is required in JSON. Use `oled-conservative` or `oled-aggressive` for OLED-focused protection, `static-hud` for small persistent HUDs, `office` for gentler document work, and `disabled` to turn the feature off.
+
+`startup` manages the current user's Windows login startup entry and launches LumaBrake with `--background` so the dashboard stays in the tray at sign-in. `startup-restore` is different: it controls whether persisted dimming and schedule state are restored after the app starts.

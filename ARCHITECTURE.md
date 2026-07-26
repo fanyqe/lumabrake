@@ -198,3 +198,11 @@ Decision: refresh the monitor catalog on a low-frequency controller interval and
 Reason: monitor reconnects, disconnects, resolution changes, orientation changes, and DPI changes should not require an application restart, but refreshing every frame would add unnecessary work and UI churn.
 
 Consequence: running sessions can recover from basic monitor add/remove/update events. A dedicated Windows display-change event path, richer reconnect identity matching, and hardware-brightness reconnect recovery remain future work.
+
+## ADR-0021: Current-User Startup Registration
+
+Decision: expose Windows login startup as an explicit CLI command that writes the current user's `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` entry and launches `LumaBrake.App.exe --background`.
+
+Reason: login startup is useful before a full installer exists, but it should remain user-controlled, per-user, and removable without administrator privileges. Starting in background keeps sign-in quiet while preserving the tray and emergency-disable paths.
+
+Consequence: Phase 17 has a first portable-package startup path with testable registry abstraction. Installer integration, app identity, signed binaries, and startup registration from the GUI remain future work.
