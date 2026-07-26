@@ -74,6 +74,19 @@ dotnet run --project src/LumaBrake.Cli -- profile apply evening
 
 Profile apply updates persisted settings. Restart the dashboard if it is already running and you need the WPF app to load those persisted changes.
 
+## Monitor Tint
+
+Use `monitor list` to copy a device name or stable id, then set a monitor-specific tint:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- monitor list
+dotnet run --project src/LumaBrake.Cli -- tint monitor set "\\.\DISPLAY2" neutral 18
+dotnet run --project src/LumaBrake.Cli -- tint monitor list
+dotnet run --project src/LumaBrake.Cli -- tint monitor remove "\\.\DISPLAY2"
+```
+
+An active schedule tint takes priority over monitor tint. Otherwise monitor tint overrides the global tint for the matching display. `tint off` clears only the global tint; use `tint monitor remove` for monitor overrides.
+
 ## Schedules
 
 Create, pause, resume, or remove named schedules from the CLI:

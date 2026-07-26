@@ -40,6 +40,20 @@
     "hold": "00:00:00.1500000",
     "release": "00:00:00.5000000"
   },
+  "monitorTints": {
+    "entries": [
+      {
+        "monitorId": "\\\\.\\DISPLAY2",
+        "tint": {
+          "enabled": true,
+          "red": 255,
+          "green": 244,
+          "blue": 230,
+          "opacity": 0.18
+        }
+      }
+    ]
+  },
   "schedules": {
     "enabled": true,
     "entries": [
@@ -74,6 +88,20 @@
           "green": 214,
           "blue": 170,
           "opacity": 0.1
+        },
+        "monitorTints": {
+          "entries": [
+            {
+              "monitorId": "\\\\.\\DISPLAY2",
+              "tint": {
+                "enabled": true,
+                "red": 255,
+                "green": 244,
+                "blue": 230,
+                "opacity": 0.18
+              }
+            }
+          ]
         },
         "focusDimming": {
           "enabled": true,

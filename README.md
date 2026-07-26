@@ -33,7 +33,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Adaptive Content Dimming | Initial persistent bright-scene dimming implemented |
 | Inactive Monitor Dimming | Initial non-primary unchanged-frame dimming implemented |
 | Focus Dimming | Initial active-window monitor dimming implemented |
-| Optional Tint | Basic CLI-controlled tint implemented |
+| Optional Tint | Global, scheduled, and initial per-monitor CLI tint implemented |
 | Hardware Brightness | Read-only DDC/CI diagnostics and guarded one-shot CLI writes implemented |
 | Profiles, rules, schedules | Initial software profiles, editable CLI schedules, startup restoration, and runtime scheduled dimming implemented |
 
@@ -67,6 +67,8 @@ dotnet run --project src/LumaBrake.Cli -- focus status
 dotnet run --project src/LumaBrake.Cli -- focus enable
 dotnet run --project src/LumaBrake.Cli -- focus opacity 22
 dotnet run --project src/LumaBrake.Cli -- tint warm 10
+dotnet run --project src/LumaBrake.Cli -- tint monitor set "\\.\DISPLAY2" neutral 18
+dotnet run --project src/LumaBrake.Cli -- tint monitor list
 dotnet run --project src/LumaBrake.Cli -- tint off
 dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
@@ -94,4 +96,6 @@ The overlay is click-through, non-activating, hidden from the taskbar, and asks 
 
 Hardware brightness writes are not used by the runtime overlay loop. The CLI write path is a one-shot administrative command: it is disabled by default, targets one display device plus one physical monitor index, honors the blacklist and durable write interval, and also requires `--confirm-hardware-write` on each write command.
 
-Profiles capture only software-facing dimming settings: maximum opacity, manual dimming, tint, and focus dimming. Applying a profile from the CLI updates persisted settings and intentionally leaves hardware brightness, schedules, startup restoration, and the global enabled flag unchanged.
+Profiles capture only software-facing dimming settings: maximum opacity, manual dimming, global tint, per-monitor tint, and focus dimming. Applying a profile from the CLI updates persisted settings and intentionally leaves hardware brightness, schedules, startup restoration, and the global enabled flag unchanged.
+
+Tint precedence is schedule tint, then per-monitor tint, then global tint. `tint off` clears only the global tint; use `tint monitor remove` to clear a monitor override.

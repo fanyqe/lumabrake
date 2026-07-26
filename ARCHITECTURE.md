@@ -33,7 +33,7 @@ Each active monitor
   -> foreground monitor lookup for optional focus dimming
   -> active schedule request as a low-priority runtime effect
   -> per-monitor EffectEnvelope
-  -> EffectComposer with optional tint
+  -> EffectComposer with scheduled, per-monitor, or global tint
   -> matching click-through WPF overlay global opacity / regional masks / tint
 ```
 
@@ -123,7 +123,7 @@ Decision: carry tint as part of `FinalEffectState` and render it as a full-monit
 
 Reason: tint should never alter the captured frame metrics used by luminance, flash, static, adaptive, or inactivity detectors.
 
-Consequence: Phase 9 has a basic CLI-controlled warm/neutral tint path. Per-monitor tint, schedules, richer color modes, and UI controls remain future work.
+Consequence: Phase 9 has a basic CLI-controlled warm/neutral tint path. Schedules, richer color modes, and UI controls remain future work.
 
 ## ADR-0012: Read-Only DDC/CI Capability Discovery
 
@@ -180,3 +180,11 @@ Decision: add general schedule set, remove, enable-entry, and disable-entry comm
 Reason: the model already supports multiple named entries, priority by list order, per-entry enabled state, day masks, dimming, and tint. Editing those entries through the CLI is useful without changing runtime schedule evaluation.
 
 Consequence: Phase 15 has basic named schedule editing with parsed day names and stable upsert/remove helpers. GUI schedule editing, drag-to-reorder priority, per-monitor schedules, explicit tint-off overrides, and clock-injected runtime boundary tests remain future work.
+
+## ADR-0019: Initial Per-Monitor Tint
+
+Decision: store per-monitor tint overrides keyed by monitor stable id or display device name and resolve them per controller pipeline before composing the monitor's final effect.
+
+Reason: the renderer already receives one `FinalEffectState` per monitor, so per-monitor tint can be added without changing overlay rendering, capture, detector math, or the effect composer contract.
+
+Consequence: Phase 16 has CLI-managed per-monitor tint overrides. Active schedule tint keeps priority over monitor overrides to preserve existing schedule behavior; if no schedule tint is active, monitor tint overrides global tint, including an explicit `off` override. Global `tint off` does not clear monitor overrides. GUI tint controls, monitor override clear-all, and richer monitor identity recovery remain future work.
