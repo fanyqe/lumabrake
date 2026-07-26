@@ -3,6 +3,7 @@ namespace LumaBrake.MonitorControl;
 public sealed record HardwareBrightnessReading(
     string DisplayDeviceName,
     string PhysicalDescription,
+    int PhysicalMonitorIndex,
     bool IsAvailable,
     int Minimum,
     int Current,

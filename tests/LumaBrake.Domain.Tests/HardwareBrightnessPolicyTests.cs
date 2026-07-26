@@ -61,6 +61,27 @@ public sealed class HardwareBrightnessPolicyTests
     }
 
     [Fact]
+    public void WriteBlockReason_ExplainsDisabledAndRateLimitedWrites()
+    {
+        var now = DateTimeOffset.UnixEpoch + TimeSpan.FromSeconds(20);
+        var disabled = new HardwareBrightnessPolicy(new HardwareBrightnessOptions
+        {
+            Enabled = false,
+            AllowWrites = true
+        });
+        var rateLimited = new HardwareBrightnessPolicy(new HardwareBrightnessOptions
+        {
+            Enabled = true,
+            AllowWrites = true,
+            MinimumWriteInterval = TimeSpan.FromSeconds(10)
+        });
+
+        Assert.Equal("Hardware brightness control is disabled.", disabled.WriteBlockReason(@"\\.\DISPLAY1", now, lastWriteAt: null));
+        Assert.Equal("Hardware brightness was written too recently.", rateLimited.WriteBlockReason(@"\\.\DISPLAY1", now, now - TimeSpan.FromSeconds(9)));
+        Assert.Null(rateLimited.WriteBlockReason(@"\\.\DISPLAY1", now, now - TimeSpan.FromSeconds(10)));
+    }
+
+    [Fact]
     public void Clamp_NormalizesIntervalsAndBlacklist()
     {
         var options = new HardwareBrightnessOptions

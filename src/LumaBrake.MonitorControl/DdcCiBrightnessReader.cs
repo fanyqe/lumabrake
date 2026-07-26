@@ -11,7 +11,7 @@ public sealed class DdcCiBrightnessReader
         return DdcCiPhysicalMonitorSession.Enumerate(Failed, Read, policy.IsBlacklisted);
     }
 
-    private static HardwareBrightnessReading Read(string displayDeviceName, PhysicalMonitor physicalMonitor)
+    private static HardwareBrightnessReading Read(string displayDeviceName, PhysicalMonitor physicalMonitor, int physicalMonitorIndex)
     {
         var description = DdcCiPhysicalMonitorSession.DescriptionOrDeviceName(displayDeviceName, physicalMonitor);
         if (!MonitorControlNativeMethods.GetMonitorBrightness(
@@ -20,17 +20,18 @@ public sealed class DdcCiBrightnessReader
             out var current,
             out var maximum))
         {
-            return Failed(displayDeviceName, description, $"Hardware brightness could not be read. Win32 error: {Marshal.GetLastWin32Error()}.");
+            return Failed(displayDeviceName, description, physicalMonitorIndex, $"Hardware brightness could not be read. Win32 error: {Marshal.GetLastWin32Error()}.");
         }
 
         if (maximum < minimum || current < minimum || current > maximum)
         {
-            return Failed(displayDeviceName, description, $"Hardware brightness returned an invalid range: {minimum}/{current}/{maximum}.");
+            return Failed(displayDeviceName, description, physicalMonitorIndex, $"Hardware brightness returned an invalid range: {minimum}/{current}/{maximum}.");
         }
 
         return new HardwareBrightnessReading(
             displayDeviceName,
             description,
+            physicalMonitorIndex,
             IsAvailable: true,
             (int)minimum,
             (int)current,
@@ -39,9 +40,13 @@ public sealed class DdcCiBrightnessReader
     }
 
     private static HardwareBrightnessReading Failed(string displayDeviceName, string physicalDescription, string error) =>
+        Failed(displayDeviceName, physicalDescription, physicalMonitorIndex: 0, error);
+
+    private static HardwareBrightnessReading Failed(string displayDeviceName, string physicalDescription, int physicalMonitorIndex, string error) =>
         new(
             displayDeviceName,
             physicalDescription,
+            physicalMonitorIndex,
             IsAvailable: false,
             Minimum: 0,
             Current: 0,

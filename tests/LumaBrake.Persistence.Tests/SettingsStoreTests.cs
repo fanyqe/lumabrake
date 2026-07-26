@@ -203,7 +203,13 @@ public sealed class SettingsStoreTests : IDisposable
         {
             Enabled = true,
             UserMaximumOpacity = 0.64,
-            ManualDimmingOpacity = 0.35
+            ManualDimmingOpacity = 0.35,
+            HardwareBrightness = new HardwareBrightnessOptions
+            {
+                Enabled = true,
+                AllowWrites = true,
+                BlacklistedDisplayDeviceNames = [@"\\.\DISPLAY4"]
+            }
         };
 
         var safe = SafeModeSettings.Apply(settings);
@@ -211,6 +217,9 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.False(safe.Enabled);
         Assert.Equal(0.25, safe.UserMaximumOpacity, precision: 12);
         Assert.Equal(0, safe.ManualDimmingOpacity, precision: 12);
+        Assert.False(safe.HardwareBrightness.Enabled);
+        Assert.False(safe.HardwareBrightness.AllowWrites);
+        Assert.Equal([@"\\.\DISPLAY4"], safe.HardwareBrightness.BlacklistedDisplayDeviceNames);
     }
 
     [Fact]
@@ -230,6 +239,31 @@ public sealed class SettingsStoreTests : IDisposable
     public void SafeMode_DetectsStartupArgument(string argument, bool expected)
     {
         Assert.Equal(expected, SafeModeSettings.IsRequested([argument]));
+    }
+
+    [Fact]
+    public void HardwareBrightnessStateStore_RoundTripsWriteAttemptsCaseInsensitively()
+    {
+        var store = new HardwareBrightnessStateStore(rootDirectory: _root);
+        var attemptedAt = new DateTimeOffset(2026, 7, 26, 3, 20, 0, TimeSpan.Zero);
+
+        store.RecordWriteAttempt(@"\\.\DISPLAY1#0", attemptedAt);
+
+        var loaded = store.Load();
+        Assert.Equal(attemptedAt, loaded.LastWriteAttemptAt(@"\\.\display1#0"));
+    }
+
+    [Fact]
+    public void HardwareBrightnessStateStore_QuarantinesCorruptJsonAndReturnsDefaults()
+    {
+        Directory.CreateDirectory(_root);
+        File.WriteAllText(Path.Combine(_root, "hardware-brightness-state.json"), "{not-json");
+
+        var loaded = new HardwareBrightnessStateStore(rootDirectory: _root).Load();
+
+        Assert.Empty(loaded.LastWriteAttempts);
+        Assert.False(File.Exists(Path.Combine(_root, "hardware-brightness-state.json")));
+        Assert.Single(Directory.GetFiles(_root, "hardware-brightness-state.json.corrupt-*"));
     }
 
     public void Dispose()

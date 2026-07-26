@@ -159,7 +159,7 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|hardware <list|brightness|blacklist>|schedule <list|enable|disable|clear|night>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|hardware <list|brightness|writes|blacklist>|schedule <list|enable|disable|clear|night>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
         return 2;
 }
 

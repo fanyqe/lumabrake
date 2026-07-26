@@ -11,15 +11,17 @@ public sealed class SettingsStore
 
     private readonly string _settingsPath;
 
+    public string RootDirectory { get; }
+
     public SettingsStore(string appName = "LumaBrake", string? rootDirectory = null)
     {
-        var root = rootDirectory ??
+        RootDirectory = rootDirectory ??
             Environment.GetEnvironmentVariable("LUMABRAKE_SETTINGS_ROOT") ??
             Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            appName);
-        Directory.CreateDirectory(root);
-        _settingsPath = Path.Combine(root, "settings.json");
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                appName);
+        Directory.CreateDirectory(RootDirectory);
+        _settingsPath = Path.Combine(RootDirectory, "settings.json");
     }
 
     public LumaBrakeSettings Load()

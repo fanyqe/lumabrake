@@ -8,7 +8,20 @@ internal static class DdcCiPhysicalMonitorSession
     public static IReadOnlyList<T> Enumerate<T>(
         Func<string, string, string, T> failed,
         Func<string, PhysicalMonitor, T> read,
-        Func<string, bool>? shouldSkipDisplayDeviceName = null)
+        Func<string, bool>? shouldSkipDisplayDeviceName = null,
+        Func<string, bool>? shouldIgnoreDisplayDeviceName = null) =>
+        Enumerate(
+            failed,
+            (displayDeviceName, physicalMonitor, _) => read(displayDeviceName, physicalMonitor),
+            shouldSkipDisplayDeviceName,
+            shouldIgnoreDisplayDeviceName);
+
+    public static IReadOnlyList<T> Enumerate<T>(
+        Func<string, string, string, T> failed,
+        Func<string, PhysicalMonitor, int, T> read,
+        Func<string, bool>? shouldSkipDisplayDeviceName = null,
+        Func<string, bool>? shouldIgnoreDisplayDeviceName = null,
+        Func<string, int, bool>? shouldIgnorePhysicalMonitor = null)
     {
         var results = new List<T>();
         var success = NativeMethods.EnumDisplayMonitors(
@@ -17,13 +30,18 @@ internal static class DdcCiPhysicalMonitorSession
             (IntPtr monitorHandle, IntPtr hdcMonitor, ref NativeRect monitorRect, IntPtr state) =>
             {
                 var deviceName = DisplayDeviceName(monitorHandle);
+                if (shouldIgnoreDisplayDeviceName?.Invoke(deviceName) == true)
+                {
+                    return true;
+                }
+
                 if (shouldSkipDisplayDeviceName?.Invoke(deviceName) == true)
                 {
                     results.Add(failed(deviceName, deviceName, "Hardware brightness is blacklisted for this display device."));
                     return true;
                 }
 
-                AddPhysicalMonitorResults(monitorHandle, deviceName, results, failed, read);
+                AddPhysicalMonitorResults(monitorHandle, deviceName, results, failed, read, shouldIgnorePhysicalMonitor);
                 return true;
             },
             IntPtr.Zero);
@@ -41,7 +59,8 @@ internal static class DdcCiPhysicalMonitorSession
         string displayDeviceName,
         List<T> results,
         Func<string, string, string, T> failed,
-        Func<string, PhysicalMonitor, T> read)
+        Func<string, PhysicalMonitor, int, T> read,
+        Func<string, int, bool>? shouldIgnorePhysicalMonitor)
     {
         try
         {
@@ -60,9 +79,14 @@ internal static class DdcCiPhysicalMonitorSession
 
             try
             {
-                foreach (var physicalMonitor in physicalMonitors)
+                for (var physicalMonitorIndex = 0; physicalMonitorIndex < physicalMonitors.Length; physicalMonitorIndex++)
                 {
-                    results.Add(read(displayDeviceName, physicalMonitor));
+                    if (shouldIgnorePhysicalMonitor?.Invoke(displayDeviceName, physicalMonitorIndex) == true)
+                    {
+                        continue;
+                    }
+
+                    results.Add(read(displayDeviceName, physicalMonitors[physicalMonitorIndex], physicalMonitorIndex));
                 }
             }
             finally

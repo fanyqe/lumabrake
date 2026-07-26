@@ -7,7 +7,12 @@ public static class SafeModeSettings
         {
             Enabled = false,
             UserMaximumOpacity = Math.Min(settings.UserMaximumOpacity, 0.25),
-            ManualDimmingOpacity = 0
+            ManualDimmingOpacity = 0,
+            HardwareBrightness = settings.HardwareBrightness with
+            {
+                Enabled = false,
+                AllowWrites = false
+            }
         };
 
     public static bool IsRequested(IEnumerable<string> args) =>
