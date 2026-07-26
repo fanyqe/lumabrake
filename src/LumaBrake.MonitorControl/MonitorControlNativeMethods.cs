@@ -32,4 +32,12 @@ internal static partial class MonitorControlNativeMethods
         IntPtr physicalMonitorHandle,
         StringBuilder capabilitiesString,
         uint capabilitiesStringLengthInCharacters);
+
+    [DllImport("dxva2.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetMonitorBrightness(
+        IntPtr physicalMonitorHandle,
+        out uint minimumBrightness,
+        out uint currentBrightness,
+        out uint maximumBrightness);
 }
