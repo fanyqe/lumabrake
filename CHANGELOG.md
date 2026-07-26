@@ -20,5 +20,6 @@
 - Added a basic CLI-controlled tint overlay.
 - Added read-only DDC/CI hardware capability detection through the CLI.
 - Added read-only hardware brightness readings through the CLI.
+- Added hardware brightness policy defaults and display-device blacklist commands.
 - Added initial CLI schedules and startup restoration for software dimming and tint.
 - Added runtime scheduled dimming as a low-priority effect.

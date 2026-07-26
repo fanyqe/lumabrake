@@ -130,7 +130,7 @@ Decision: expose hardware brightness support first as read-only `lumabrake hardw
 
 Reason: DDC/CI calls can be slow or unreliable on some displays, so hardware control must be introduced separately from the low-latency capture, analysis, and overlay loop.
 
-Consequence: Phase 10 now has a safe capability and brightness-read base. Brightness writes, rate limiting, monitor blacklists, reconnect recovery, and schedule/profile integration remain future work.
+Consequence: Phase 10 now has a safe capability and brightness-read base plus rate-limit and blacklist policy defaults. Brightness writes, reconnect recovery, and schedule/profile integration remain future work.
 
 ## ADR-0013: Startup Schedule Foundation
 
