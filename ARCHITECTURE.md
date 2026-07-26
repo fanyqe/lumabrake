@@ -30,6 +30,7 @@ Each active monitor
   -> per-monitor StaticShadeDetector
   -> per-monitor AdaptiveContentDimmingDetector
   -> per-monitor InactiveMonitorDimmingDetector for non-primary displays
+  -> active schedule request as a low-priority runtime effect
   -> per-monitor EffectEnvelope
   -> EffectComposer with optional tint
   -> matching click-through WPF overlay global opacity / regional masks / tint
@@ -138,3 +139,11 @@ Decision: model schedules as deterministic local day-mask plus minute-of-day ran
 Reason: startup restoration is useful before a full runtime scheduler exists, and local minute ranges avoid storing absolute timestamps or timezone-specific secrets in settings.
 
 Consequence: Phase 11 has a first CLI path for night schedules and startup restoration. Runtime refresh, per-monitor schedules, profile assignment, DST edge policy, and hardware brightness targets remain future work.
+
+## ADR-0014: Runtime Scheduled Dimming
+
+Decision: evaluate active schedules inside the controller loop and pass them to the effect composer as transient low-priority requests instead of writing them into the effect envelope.
+
+Reason: schedule dimming is ambient baseline behavior and should not outrank manual overrides, flash protection, spike protection, or adaptive content decisions.
+
+Consequence: schedules now affect running overlays without double-applying manual dimming. Per-monitor schedules, explicit tint-off overrides, richer editors, and deterministic clock injection remain future work.

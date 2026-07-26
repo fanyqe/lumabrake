@@ -20,3 +20,4 @@
 - Added a basic CLI-controlled tint overlay.
 - Added read-only DDC/CI hardware capability detection through the CLI.
 - Added initial CLI schedules and startup restoration for software dimming and tint.
+- Added runtime scheduled dimming as a low-priority effect.
