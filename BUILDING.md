@@ -20,10 +20,7 @@ The portable package is self-contained for `win-x64` and includes the .NET runti
 
 ```powershell
 $artifactRoot = Join-Path $PWD "artifacts"
-$portableRoot = Join-Path $artifactRoot "portable\LumaBrake-win-x64"
-dotnet publish src\LumaBrake.App\LumaBrake.App.csproj --configuration Release --runtime win-x64 --self-contained true --output $portableRoot
-dotnet publish src\LumaBrake.Cli\LumaBrake.Cli.csproj --configuration Release --runtime win-x64 --self-contained true --output $portableRoot
-Compress-Archive -Path (Join-Path $portableRoot "*") -DestinationPath (Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip") -Force
+.\scripts\package-portable.ps1 -ArtifactRoot $artifactRoot -SelfContained $true
 Get-FileHash (Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip") -Algorithm SHA256
 dotnet tool restore
 dotnet dotnet-CycloneDX LumaBrake.sln --output $artifactRoot --filename LumaBrake.cdx.json --output-format Json --exclude-test-projects --set-name LumaBrake --set-version 0.0.0

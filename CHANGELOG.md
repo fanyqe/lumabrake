@@ -36,3 +36,4 @@
 - Added padded regional mask merging and feathered overlay edges for localized dimming.
 - Added CLI-managed current-user Windows startup registration with background tray launch.
 - Changed the CI portable ZIP to self-contained `win-x64` publishing.
+- Added tag-triggered GitHub Release automation for portable ZIP, checksum, and SBOM assets.
