@@ -45,6 +45,7 @@
 ## 0.7.0 - Hardware Brightness and Schedules
 
 - Read-only DDC/CI capability detection.
+- Read-only hardware brightness reading.
 - Initial CLI startup schedule restoration.
 - Initial runtime scheduled software dimming.
 - Rate-limited hardware brightness reads and writes.

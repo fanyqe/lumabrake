@@ -126,11 +126,11 @@ Consequence: Phase 9 has a basic CLI-controlled warm/neutral tint path. Per-moni
 
 ## ADR-0012: Read-Only DDC/CI Capability Discovery
 
-Decision: expose hardware brightness support first as a read-only `lumabrake hardware list` diagnostic command that enumerates physical monitor handles and reads DDC/CI capability metadata.
+Decision: expose hardware brightness support first as read-only `lumabrake hardware list` and `lumabrake hardware brightness` diagnostic commands that enumerate physical monitor handles and read DDC/CI capability and brightness metadata.
 
 Reason: DDC/CI calls can be slow or unreliable on some displays, so hardware control must be introduced separately from the low-latency capture, analysis, and overlay loop.
 
-Consequence: Phase 10 now has a safe capability-detection base. Brightness reads, writes, rate limiting, monitor blacklists, reconnect recovery, and schedule/profile integration remain future work.
+Consequence: Phase 10 now has a safe capability and brightness-read base. Brightness writes, rate limiting, monitor blacklists, reconnect recovery, and schedule/profile integration remain future work.
 
 ## ADR-0013: Startup Schedule Foundation
 

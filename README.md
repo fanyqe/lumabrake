@@ -33,7 +33,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Inactive Monitor Dimming | Initial non-primary unchanged-frame dimming implemented |
 | Focus Dimming | Roadmap |
 | Optional Tint | Basic CLI-controlled tint implemented |
-| Hardware Brightness | Read-only DDC/CI capability detection implemented |
+| Hardware Brightness | Read-only DDC/CI capability and brightness reading implemented |
 | Profiles, rules, schedules | Initial CLI schedule, startup restoration, and runtime scheduled dimming implemented |
 
 ## Build
@@ -67,6 +67,7 @@ dotnet run --project src/LumaBrake.Cli -- tint off
 dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
 dotnet run --project src/LumaBrake.Cli -- hardware list
+dotnet run --project src/LumaBrake.Cli -- hardware brightness
 dotnet run --project src/LumaBrake.Cli -- schedule night 22:00 07:00 24 warm 18
 dotnet run --project src/LumaBrake.Cli -- schedule list
 dotnet run --project src/LumaBrake.Cli -- startup-restore status
