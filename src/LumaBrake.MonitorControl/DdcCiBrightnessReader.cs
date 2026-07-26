@@ -1,11 +1,15 @@
 using System.Runtime.InteropServices;
+using LumaBrake.Domain.Hardware;
 
 namespace LumaBrake.MonitorControl;
 
 public sealed class DdcCiBrightnessReader
 {
-    public IReadOnlyList<HardwareBrightnessReading> ReadBrightness() =>
-        DdcCiPhysicalMonitorSession.Enumerate(Failed, Read);
+    public IReadOnlyList<HardwareBrightnessReading> ReadBrightness(HardwareBrightnessOptions? options = null)
+    {
+        var policy = new HardwareBrightnessPolicy(options ?? new HardwareBrightnessOptions { Enabled = true });
+        return DdcCiPhysicalMonitorSession.Enumerate(Failed, Read, policy.IsBlacklisted);
+    }
 
     private static HardwareBrightnessReading Read(string displayDeviceName, PhysicalMonitor physicalMonitor)
     {

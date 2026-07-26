@@ -7,7 +7,8 @@ internal static class DdcCiPhysicalMonitorSession
 {
     public static IReadOnlyList<T> Enumerate<T>(
         Func<string, string, string, T> failed,
-        Func<string, PhysicalMonitor, T> read)
+        Func<string, PhysicalMonitor, T> read,
+        Func<string, bool>? shouldSkipDisplayDeviceName = null)
     {
         var results = new List<T>();
         var success = NativeMethods.EnumDisplayMonitors(
@@ -16,6 +17,12 @@ internal static class DdcCiPhysicalMonitorSession
             (IntPtr monitorHandle, IntPtr hdcMonitor, ref NativeRect monitorRect, IntPtr state) =>
             {
                 var deviceName = DisplayDeviceName(monitorHandle);
+                if (shouldSkipDisplayDeviceName?.Invoke(deviceName) == true)
+                {
+                    results.Add(failed(deviceName, deviceName, "Hardware brightness is blacklisted for this display device."));
+                    return true;
+                }
+
                 AddPhysicalMonitorResults(monitorHandle, deviceName, results, failed, read);
                 return true;
             },

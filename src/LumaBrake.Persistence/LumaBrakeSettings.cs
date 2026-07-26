@@ -1,5 +1,6 @@
 using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
+using LumaBrake.Domain.Hardware;
 using LumaBrake.Domain.Schedules;
 
 namespace LumaBrake.Persistence;
@@ -27,4 +28,6 @@ public sealed record LumaBrakeSettings
     public ScheduleOptions Schedules { get; init; } = new();
 
     public StartupRestorationOptions StartupRestoration { get; init; } = new();
+
+    public HardwareBrightnessOptions HardwareBrightness { get; init; } = new();
 }

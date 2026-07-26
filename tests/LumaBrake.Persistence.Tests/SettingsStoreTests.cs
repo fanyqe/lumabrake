@@ -1,5 +1,6 @@
 using LumaBrake.Persistence;
 using LumaBrake.Domain.Effects;
+using LumaBrake.Domain.Hardware;
 using LumaBrake.Domain.Schedules;
 
 namespace LumaBrake.Persistence.Tests;
@@ -21,6 +22,9 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Empty(settings.Schedules.Entries);
         Assert.True(settings.StartupRestoration.Enabled);
         Assert.True(settings.StartupRestoration.ApplySchedules);
+        Assert.False(settings.HardwareBrightness.Enabled);
+        Assert.False(settings.HardwareBrightness.AllowWrites);
+        Assert.Empty(settings.HardwareBrightness.BlacklistedDisplayDeviceNames);
     }
 
     [Fact]
@@ -47,6 +51,12 @@ public sealed class SettingsStoreTests : IDisposable
                         Tint = new TintOptions { Enabled = true, Opacity = 0.10 }
                     }
                 ]
+            },
+            HardwareBrightness = new HardwareBrightnessOptions
+            {
+                Enabled = true,
+                AllowWrites = false,
+                BlacklistedDisplayDeviceNames = [@"\\.\DISPLAY3"]
             }
         });
 
@@ -60,6 +70,9 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Equal("night", schedule.Id);
         Assert.Equal(0.22, schedule.ManualDimmingOpacity, precision: 12);
         Assert.True(schedule.Tint.Enabled);
+        Assert.True(loaded.HardwareBrightness.Enabled);
+        Assert.False(loaded.HardwareBrightness.AllowWrites);
+        Assert.Equal([@"\\.\DISPLAY3"], loaded.HardwareBrightness.BlacklistedDisplayDeviceNames);
     }
 
     [Fact]
@@ -84,6 +97,8 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.False(loaded.Schedules.Enabled);
         Assert.Empty(loaded.Schedules.Entries);
         Assert.True(loaded.StartupRestoration.Enabled);
+        Assert.False(loaded.HardwareBrightness.Enabled);
+        Assert.False(loaded.HardwareBrightness.AllowWrites);
     }
 
     [Fact]

@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LumaBrake.Domain\LumaBrake.Domain.csproj" />
     <ProjectReference Include="..\LumaBrake.Platform.Windows\LumaBrake.Platform.Windows.csproj" />
   </ItemGroup>
 
