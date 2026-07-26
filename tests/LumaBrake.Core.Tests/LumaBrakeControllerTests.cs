@@ -189,6 +189,7 @@ public sealed class LumaBrakeControllerTests
                 var primary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[0].StableId);
                 var secondary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[1].StableId);
                 return primary.FlashEvents > 0 &&
+                    primary.RedFlashEvents == 0 &&
                     primary.ActiveReason == EffectReason.RepetitiveFlash &&
                     primary.RegionalMaskCount > 0 &&
                     overlay.LastEffect(monitors[0].StableId)?.RegionalMasks.Count > 0 &&
@@ -197,6 +198,46 @@ public sealed class LumaBrakeControllerTests
             TimeSpan.FromSeconds(3));
 
         Assert.True(flashDetected);
+    }
+
+    [Fact]
+    public async Task Start_CountsRedDominantFlashEventsInSnapshots()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RedFlashingCapture(monitors[0].StableId),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                FlashGuard = new FlashDetectorOptions
+                {
+                    MinimumTransitions = 3,
+                    MinimumAffectedTileRatio = 0.50,
+                    Cooldown = TimeSpan.FromSeconds(5),
+                    Hold = TimeSpan.FromSeconds(5),
+                    Release = TimeSpan.FromSeconds(5)
+                }
+            },
+            new MutableMonitorCatalog([monitors[0]]));
+
+        controller.Start();
+
+        var redFlashDetected = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                var monitor = snapshot.Monitors.Single();
+                return snapshot.FlashEvents > 0 &&
+                    snapshot.RedFlashEvents > 0 &&
+                    monitor.RedFlashEvents > 0 &&
+                    monitor.ActiveReason == EffectReason.RepetitiveFlash &&
+                    overlay.LastEffect(monitors[0].StableId)?.GlobalOpacity > 0;
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(redFlashDetected);
     }
 
     [Fact]
@@ -229,6 +270,7 @@ public sealed class LumaBrakeControllerTests
                 var effect = overlay.LastEffect(monitors[0].StableId);
                 var snapshot = controller.Snapshot().Monitors.Single();
                 return snapshot.FlashEvents > 0 &&
+                    snapshot.RedFlashEvents == 0 &&
                     effect is not null &&
                     effect.GlobalOpacity > 0 &&
                     effect.RegionalMasks.Count == 0;
@@ -1041,6 +1083,47 @@ public sealed class LumaBrakeControllerTests
                 pixels[index] = value;
                 pixels[index + 1] = value;
                 pixels[index + 2] = value;
+                pixels[index + 3] = 255;
+            }
+
+            return pixels;
+        }
+    }
+
+    private sealed class RedFlashingCapture : IFrameCapture
+    {
+        private readonly string _flashingStableId;
+        private readonly ConcurrentDictionary<string, int> _captureCounts = new(StringComparer.OrdinalIgnoreCase);
+
+        public RedFlashingCapture(string flashingStableId)
+        {
+            _flashingStableId = flashingStableId;
+        }
+
+        public CapturedFrame Capture(MonitorDescriptor monitor)
+        {
+            var count = _captureCounts.AddOrUpdate(monitor.StableId, 1, (_, current) => current + 1);
+            var isRed = string.Equals(monitor.StableId, _flashingStableId, StringComparison.OrdinalIgnoreCase) &&
+                count % 2 == 0;
+
+            return new CapturedFrame(
+                SolidPixels(isRed),
+                new FrameMetadata(DateTimeOffset.UtcNow, 160, 90, monitor.DeviceName),
+                monitor);
+        }
+
+        public void Dispose()
+        {
+        }
+
+        private static byte[] SolidPixels(bool isRed)
+        {
+            var pixels = new byte[160 * 90 * 4];
+            for (var index = 0; index < pixels.Length; index += 4)
+            {
+                pixels[index] = 0;
+                pixels[index + 1] = 0;
+                pixels[index + 2] = isRed ? (byte)255 : (byte)0;
                 pixels[index + 3] = 255;
             }
 

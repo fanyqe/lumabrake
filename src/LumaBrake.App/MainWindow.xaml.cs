@@ -108,7 +108,10 @@ public partial class MainWindow : Window
         AverageText.Text = snapshot.AverageLuminance.ToString("0.000");
         P95Text.Text = snapshot.Percentile95Luminance.ToString("0.000");
         OpacityText.Text = FormatPercent(snapshot.OverlayOpacity);
-        EventsText.Text = (snapshot.SpikeEvents + snapshot.FlashEvents).ToString("N0");
+        var protectionEvents = snapshot.SpikeEvents + snapshot.FlashEvents;
+        EventsText.Text = snapshot.RedFlashEvents > 0
+            ? $"{protectionEvents:N0} ({snapshot.RedFlashEvents:N0} red)"
+            : protectionEvents.ToString("N0");
         ReasonText.Text = FormatReason(snapshot.ActiveReason);
         RegionalMasksText.Text = snapshot.RegionalMaskCount.ToString("N0");
         if (Math.Abs(ManualDimmingSlider.Value - _controller.Settings.ManualDimmingOpacity) > 0.001)

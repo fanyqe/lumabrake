@@ -145,6 +145,7 @@ public sealed class LumaBrakeController : IDisposable
                 pipelines.Sum(pipeline => pipeline.FramesAnalyzed),
                 pipelines.Sum(pipeline => pipeline.SpikeEvents),
                 pipelines.Sum(pipeline => pipeline.FlashEvents),
+                pipelines.Sum(pipeline => pipeline.RedFlashEvents),
                 pipelines.Sum(pipeline => pipeline.LastRegionalMaskCount),
                 pipelines.Select(pipeline => pipeline.LastRegionalMaskMaxOpacity).DefaultIfEmpty(0).Max(),
                 monitorSnapshots);
@@ -303,6 +304,11 @@ public sealed class LumaBrakeController : IDisposable
                 if (flash is not null)
                 {
                     current.FlashEvents++;
+                    if (flash.IsRedDominant)
+                    {
+                        current.RedFlashEvents++;
+                    }
+
                     var flashRegions = flash.AffectedTileRatio < RegionalFlashFallbackRatio
                         ? flash.AffectedRegions
                         : Array.Empty<EffectRegion>();
@@ -475,6 +481,7 @@ public sealed class LumaBrakeController : IDisposable
             pipeline.FramesAnalyzed,
             pipeline.SpikeEvents,
             pipeline.FlashEvents,
+            pipeline.RedFlashEvents,
             pipeline.LastRegionalMaskCount,
             pipeline.LastRegionalMaskMaxOpacity);
 
@@ -509,6 +516,8 @@ public sealed class LumaBrakeController : IDisposable
         public long SpikeEvents { get; set; }
 
         public long FlashEvents { get; set; }
+
+        public long RedFlashEvents { get; set; }
 
         public double LastAverage { get; set; }
 
