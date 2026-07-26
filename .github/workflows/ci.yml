@@ -28,6 +28,9 @@ jobs:
       - name: Test
         run: dotnet test LumaBrake.sln --configuration Release --no-build
 
+      - name: Restore local tools
+        run: dotnet tool restore
+
       - name: Publish portable package
         shell: pwsh
         run: |
@@ -56,6 +59,20 @@ jobs:
           "$($hash.Hash)  LumaBrake-win-x64-portable.zip" |
             Set-Content (Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip.sha256") -Encoding ascii
 
+      - name: Generate SBOM
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $PWD "artifacts"
+          New-Item -ItemType Directory -Force $artifactRoot | Out-Null
+
+          dotnet dotnet-CycloneDX LumaBrake.sln `
+            --output $artifactRoot `
+            --filename "LumaBrake.cdx.json" `
+            --output-format Json `
+            --exclude-test-projects `
+            --set-name "LumaBrake" `
+            --set-version "0.0.0"
+
       - name: Upload portable artifact
         uses: actions/upload-artifact@v4
         with:
@@ -63,4 +80,5 @@ jobs:
           path: |
             artifacts/LumaBrake-win-x64-portable.zip
             artifacts/LumaBrake-win-x64-portable.zip.sha256
+            artifacts/LumaBrake.cdx.json
           if-no-files-found: error
