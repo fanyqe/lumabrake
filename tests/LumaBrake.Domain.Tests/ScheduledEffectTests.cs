@@ -70,4 +70,72 @@ public sealed class ScheduledEffectTests
         Assert.Equal("night", active.Id);
         Assert.Equal(0.90, active.ManualDimmingOpacity, precision: 12);
     }
+
+    [Fact]
+    public void Upsert_ReplacesMatchingScheduleWithoutMovingPriority()
+    {
+        var schedules = new ScheduleOptions
+        {
+            Entries =
+            [
+                new ScheduledEffect { Id = "work", Name = "Work", ManualDimmingOpacity = 0.10 },
+                new ScheduledEffect { Id = "night", Name = "Night", ManualDimmingOpacity = 0.20 }
+            ]
+        }.Upsert(new ScheduledEffect { Id = "WORK", Name = "Updated", ManualDimmingOpacity = 0.30 });
+
+        Assert.Collection(
+            schedules.Entries,
+            entry =>
+            {
+                Assert.Equal("WORK", entry.Id);
+                Assert.Equal("Updated", entry.Name);
+                Assert.Equal(0.30, entry.ManualDimmingOpacity, precision: 12);
+            },
+            entry => Assert.Equal("night", entry.Id));
+        Assert.Equal("Updated", schedules.Find("work")?.Name);
+    }
+
+    [Fact]
+    public void Remove_DropsMatchingScheduleOnly()
+    {
+        var schedules = new ScheduleOptions
+        {
+            Entries =
+            [
+                new ScheduledEffect { Id = "work" },
+                new ScheduledEffect { Id = "night" }
+            ]
+        }.Remove("WORK");
+
+        var schedule = Assert.Single(schedules.Entries);
+        Assert.Equal("night", schedule.Id);
+    }
+
+    [Fact]
+    public void SetEntryEnabled_TogglesOnlyMatchingSchedule()
+    {
+        var schedules = new ScheduleOptions
+        {
+            Entries =
+            [
+                new ScheduledEffect { Id = "work", Enabled = true },
+                new ScheduledEffect { Id = "night", Enabled = true }
+            ]
+        }.SetEntryEnabled("WORK", enabled: false);
+
+        Assert.False(schedules.Find("work")?.Enabled);
+        Assert.True(schedules.Find("night")?.Enabled);
+    }
+
+    [Fact]
+    public void FindAndRemove_IgnoreBlankIds()
+    {
+        var schedules = new ScheduleOptions
+        {
+            Entries = [new ScheduledEffect { Id = "night" }]
+        };
+
+        Assert.Null(schedules.Find(" "));
+        Assert.Single(schedules.Remove(" ").Entries);
+    }
 }
