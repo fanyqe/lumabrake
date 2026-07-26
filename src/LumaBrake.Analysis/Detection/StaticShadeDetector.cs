@@ -32,6 +32,7 @@ public sealed class StaticShadeDetector
 
         var affectedRegions = new List<EffectRegion>();
         var longestStaticDuration = TimeSpan.Zero;
+        var exposureScoreSum = 0.0;
 
         for (var index = 0; index < summary.Tiles.Count; index++)
         {
@@ -53,9 +54,11 @@ public sealed class StaticShadeDetector
             {
                 state.StaticSince ??= state.LastSeen;
                 var duration = frame.Metadata.CapturedAt - state.StaticSince.Value;
-                if (duration >= Options.MinimumStaticDuration)
+                var exposureScore = ExposureScore(tile, duration);
+                if (duration >= Options.MinimumStaticDuration && exposureScore >= Options.MinimumExposureScore)
                 {
                     affectedRegions.Add(TileRegion(tile, summary));
+                    exposureScoreSum += exposureScore;
                     longestStaticDuration = duration > longestStaticDuration ? duration : longestStaticDuration;
                 }
             }
@@ -80,7 +83,8 @@ public sealed class StaticShadeDetector
             return null;
         }
 
-        var severity = StaticSeverity(longestStaticDuration);
+        var exposureSeverity = exposureScoreSum / affectedRegions.Count;
+        var severity = Math.Max(StaticSeverity(longestStaticDuration), exposureSeverity);
         var opacity = Math.Clamp(
             Options.BaseOpacity + (severity * (Options.MaximumOpacity - Options.BaseOpacity)),
             0,
@@ -93,7 +97,8 @@ public sealed class StaticShadeDetector
             affectedRatio,
             longestStaticDuration,
             opacity,
-            affectedRegions);
+            affectedRegions,
+            exposureSeverity);
     }
 
     private void RemoveStaleTileStates(int currentTileCount)
@@ -118,7 +123,34 @@ public sealed class StaticShadeDetector
 
     private bool IsBright(TileLuminanceStats tile) =>
         tile.AverageLuminance >= Options.BrightTileAverageThreshold ||
+        tile.Percentile95Luminance >= Options.BrightTilePercentile95Threshold ||
         tile.BrightPixelRatio >= Options.BrightTilePixelRatioThreshold;
+
+    private double ExposureScore(TileLuminanceStats tile, TimeSpan duration)
+    {
+        var luminanceScore = Math.Max(
+            NormalizedAboveThreshold(tile.AverageLuminance, Options.BrightTileAverageThreshold),
+            NormalizedAboveThreshold(tile.Percentile95Luminance, Options.BrightTilePercentile95Threshold));
+        var brightPixelScore = NormalizedAboveThreshold(tile.BrightPixelRatio, Options.BrightTilePixelRatioThreshold);
+        var durationScore = StaticSeverity(duration);
+
+        var luminanceWeight = PositiveWeight(Options.ExposureLuminanceWeight);
+        var brightPixelWeight = PositiveWeight(Options.ExposureBrightPixelWeight);
+        var durationWeight = PositiveWeight(Options.ExposureDurationWeight);
+        var weightSum = luminanceWeight + brightPixelWeight + durationWeight;
+        if (weightSum <= 0)
+        {
+            return Math.Max(luminanceScore, Math.Max(brightPixelScore, durationScore));
+        }
+
+        return Math.Clamp(
+            ((luminanceScore * luminanceWeight) +
+            (brightPixelScore * brightPixelWeight) +
+            (durationScore * durationWeight)) /
+            weightSum,
+            0,
+            1);
+    }
 
     private double StaticSeverity(TimeSpan duration)
     {
@@ -133,6 +165,18 @@ public sealed class StaticShadeDetector
             0,
             1);
     }
+
+    private static double NormalizedAboveThreshold(double value, double threshold)
+    {
+        if (threshold >= 1)
+        {
+            return value >= threshold ? 1 : 0;
+        }
+
+        return Math.Clamp((value - threshold) / (1 - threshold), 0, 1);
+    }
+
+    private static double PositiveWeight(double weight) => Math.Max(0, weight);
 
     private static EffectRegion TileRegion(TileLuminanceStats tile, FrameTileSummary summary)
     {

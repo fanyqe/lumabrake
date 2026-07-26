@@ -31,6 +31,9 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.True(settings.FlashGuard.RedFlashDetectionEnabled);
         Assert.Equal(0.35, settings.FlashGuard.RedDominanceThreshold, precision: 12);
         Assert.Equal(0.35, settings.FlashGuard.RedDominantPixelRatioThreshold, precision: 12);
+        Assert.True(settings.StaticShade.Enabled);
+        Assert.Equal(0.18, settings.StaticShade.MinimumExposureScore, precision: 12);
+        Assert.Equal(0.72, settings.StaticShade.BrightTilePercentile95Threshold, precision: 12);
         Assert.False(settings.HardwareBrightness.Enabled);
         Assert.False(settings.HardwareBrightness.AllowWrites);
         Assert.Empty(settings.HardwareBrightness.BlacklistedDisplayDeviceNames);
@@ -51,6 +54,7 @@ public sealed class SettingsStoreTests : IDisposable
                 RedDominanceThreshold = 0.42,
                 RedDominantPixelRatioThreshold = 0.48
             },
+            StaticShade = StaticShadeOptions.ForPreset(StaticShadePreset.OledAggressive),
             Schedules = new ScheduleOptions
             {
                 Enabled = true,
@@ -112,6 +116,9 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.False(loaded.FlashGuard.RedFlashDetectionEnabled);
         Assert.Equal(0.42, loaded.FlashGuard.RedDominanceThreshold, precision: 12);
         Assert.Equal(0.48, loaded.FlashGuard.RedDominantPixelRatioThreshold, precision: 12);
+        Assert.Equal(TimeSpan.FromSeconds(12), loaded.StaticShade.MinimumStaticDuration);
+        Assert.Equal(0.10, loaded.StaticShade.MinimumExposureScore, precision: 12);
+        Assert.Equal(0.44, loaded.StaticShade.MaximumOpacity, precision: 12);
         Assert.True(loaded.Schedules.Enabled);
         var schedule = Assert.Single(loaded.Schedules.Entries);
         Assert.Equal("night", schedule.Id);
@@ -160,6 +167,8 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.True(loaded.FlashGuard.RedFlashDetectionEnabled);
         Assert.Equal(0.35, loaded.FlashGuard.RedDominanceThreshold, precision: 12);
         Assert.Equal(0.35, loaded.FlashGuard.RedDominantPixelRatioThreshold, precision: 12);
+        Assert.Equal(0.18, loaded.StaticShade.MinimumExposureScore, precision: 12);
+        Assert.Equal(0.72, loaded.StaticShade.BrightTilePercentile95Threshold, precision: 12);
         Assert.False(loaded.HardwareBrightness.Enabled);
         Assert.False(loaded.HardwareBrightness.AllowWrites);
     }

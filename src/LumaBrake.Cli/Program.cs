@@ -26,6 +26,7 @@ switch (command)
         Console.WriteLine($"Schedules: {(settings.Schedules.Enabled ? "enabled" : "disabled")}, {settings.Schedules.Entries.Length.ToString(CultureInfo.InvariantCulture)} configured");
         Console.WriteLine($"Profiles: {settings.Profiles.Clamp().Entries.Length.ToString(CultureInfo.InvariantCulture)} saved");
         Console.WriteLine($"Startup restoration: {(settings.StartupRestoration.Enabled ? "enabled" : "disabled")}");
+        Console.WriteLine($"StaticShade: {(settings.StaticShade.Enabled ? "enabled" : "disabled")} exposure {settings.StaticShade.MinimumExposureScore.ToString("0.00", CultureInfo.InvariantCulture)}");
         var focusDimming = settings.FocusDimming.Clamp();
         Console.WriteLine($"Focus dimming: {(focusDimming.Enabled ? "enabled" : "disabled")} {Math.Round(focusDimming.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
         var activeSchedule = settings.Schedules.ActiveAt(DateTimeOffset.Now);
@@ -99,6 +100,9 @@ switch (command)
 
     case "profile":
         return ProfileCliCommands.Run(args, store, settings);
+
+    case "static-shade":
+        return StaticShadeCliCommands.Run(args, store, settings);
 
     case "capture-test":
         var primaryMonitor = PrimaryMonitor.Get();
@@ -175,7 +179,7 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|tint monitor <list|set|remove>|focus <status|enable|disable|opacity>|profile <list|save|apply|remove>|capture-test|monitor list|hardware <list|brightness|writes|blacklist>|schedule <list|enable|disable|clear|night|set|remove|enable-entry|disable-entry>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|tint monitor <list|set|remove>|focus <status|enable|disable|opacity>|profile <list|save|apply|remove>|static-shade <status|list|preset>|capture-test|monitor list|hardware <list|brightness|writes|blacklist>|schedule <list|enable|disable|clear|night|set|remove|enable-entry|disable-entry>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
         return 2;
 }
 

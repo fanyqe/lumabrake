@@ -9,4 +9,5 @@ public sealed record StaticShadeEvent(
     double AffectedTileRatio,
     TimeSpan LongestStaticDuration,
     double RecommendedOpacity,
-    IReadOnlyList<EffectRegion> AffectedRegions);
+    IReadOnlyList<EffectRegion> AffectedRegions,
+    double ExposureScore = 0);

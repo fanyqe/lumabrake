@@ -11,10 +11,12 @@ public sealed class StaticShadeDetectorTests
         MinimumStaticDuration = TimeSpan.FromMilliseconds(300),
         FullOpacityDuration = TimeSpan.FromMilliseconds(900),
         BrightTileAverageThreshold = 0.70,
+        BrightTilePercentile95Threshold = 0.76,
         BrightTilePixelRatioThreshold = 0.50,
         MaximumAverageDelta = 0.02,
         MinimumAffectedTileRatio = 0.05,
         MaximumAffectedTileRatio = 0.50,
+        MinimumExposureScore = 0.18,
         BaseOpacity = 0.10,
         MaximumOpacity = 0.30
     };
@@ -32,7 +34,8 @@ public sealed class StaticShadeDetectorTests
         Assert.Equal(1, staticShade!.AffectedTileCount);
         Assert.Equal(0.0625, staticShade.AffectedTileRatio, precision: 12);
         Assert.Equal(TimeSpan.FromMilliseconds(300), staticShade.LongestStaticDuration);
-        Assert.Equal(_options.BaseOpacity, staticShade.RecommendedOpacity, precision: 12);
+        Assert.Equal(0.40, staticShade.ExposureScore, precision: 12);
+        Assert.Equal(0.18, staticShade.RecommendedOpacity, precision: 12);
 
         var region = Assert.Single(staticShade.AffectedRegions);
         Assert.Equal(0, region.X, precision: 12);
@@ -78,6 +81,32 @@ public sealed class StaticShadeDetectorTests
     }
 
     [Fact]
+    public void Observe_DetectsBrightStaticTileFromHighPercentileExposure()
+    {
+        var detector = new StaticShadeDetector(_options);
+        var events = LocalizedStaticSequence([0.65, 0.65, 0.65, 0.65], percentile95: 0.90, brightPixelRatio: 0.10)
+            .Select(detector.Observe)
+            .Where(result => result is not null)
+            .ToArray();
+
+        var staticShade = Assert.Single(events);
+        Assert.True(staticShade!.ExposureScore > _options.MinimumExposureScore);
+        Assert.Equal(1, staticShade.AffectedTileCount);
+    }
+
+    [Fact]
+    public void Observe_IncreasesOpacityForHigherExposureScore()
+    {
+        var lowerExposure = FirstEvent(
+            LocalizedStaticSequence([0.72, 0.72, 0.72, 0.72, 0.72, 0.72, 0.72], brightPixelRatio: 0.55));
+        var higherExposure = FirstEvent(
+            LocalizedStaticSequence([0.92, 0.92, 0.92, 0.92, 0.92, 0.92, 0.92], brightPixelRatio: 1.0));
+
+        Assert.True(higherExposure.ExposureScore > lowerExposure.ExposureScore);
+        Assert.True(higherExposure.RecommendedOpacity > lowerExposure.RecommendedOpacity);
+    }
+
+    [Fact]
     public void Observe_DoesNothingWhenDisabled()
     {
         var detector = new StaticShadeDetector(_options with { Enabled = false });
@@ -107,11 +136,15 @@ public sealed class StaticShadeDetectorTests
     private static IEnumerable<FrameAnalysisResult> LocalizedStaticSequence(
         IReadOnlyList<double> values,
         int stepMs = 100,
-        int startMs = 0)
+        int startMs = 0,
+        double? percentile95 = null,
+        double? brightPixelRatio = null)
     {
         for (var index = 0; index < values.Count; index++)
         {
-            yield return Frame(LocalizedTiles(values[index]), startMs + (index * stepMs));
+            yield return Frame(
+                LocalizedTiles(values[index], percentile95 ?? values[index], brightPixelRatio),
+                startMs + (index * stepMs));
         }
     }
 
@@ -132,10 +165,37 @@ public sealed class StaticShadeDetectorTests
             BrightPixelRatio: summary.Tiles.Average(tile => tile.BrightPixelRatio),
             TileSummary: summary);
 
-    private static FrameTileSummary LocalizedTiles(double luminance)
+    private static StaticShadeEvent FirstEvent(IEnumerable<FrameAnalysisResult> frames)
+    {
+        var detector = new StaticShadeDetector(new StaticShadeOptions
+        {
+            MinimumStaticDuration = TimeSpan.FromMilliseconds(300),
+            FullOpacityDuration = TimeSpan.FromMilliseconds(900),
+            BrightTileAverageThreshold = 0.70,
+            BrightTilePercentile95Threshold = 0.76,
+            BrightTilePixelRatioThreshold = 0.50,
+            MaximumAverageDelta = 0.02,
+            MinimumAffectedTileRatio = 0.05,
+            MaximumAffectedTileRatio = 0.50,
+            MinimumExposureScore = 0.18,
+            BaseOpacity = 0.10,
+            MaximumOpacity = 0.30
+        });
+
+        return frames
+            .Select(detector.Observe)
+            .First(result => result is not null)!;
+    }
+
+    private static FrameTileSummary LocalizedTiles(
+        double luminance,
+        double percentile95,
+        double? brightPixelRatio = null)
     {
         var tiles = Enumerable.Range(0, 16)
-            .Select(index => Tile(index, index == 0 ? luminance : 0.05))
+            .Select(index => index == 0
+                ? Tile(index, luminance, percentile95, brightPixelRatio)
+                : Tile(index, 0.05))
             .ToArray();
 
         return new FrameTileSummary(4, 4, tiles);
@@ -150,14 +210,18 @@ public sealed class StaticShadeDetectorTests
         return new FrameTileSummary(4, 4, tiles);
     }
 
-    private static TileLuminanceStats Tile(int index, double luminance)
+    private static TileLuminanceStats Tile(
+        int index,
+        double luminance,
+        double? percentile95 = null,
+        double? brightPixelRatio = null)
     {
-        var brightRatio = luminance >= 0.70 ? 1 : 0;
+        var brightRatio = brightPixelRatio ?? (luminance >= 0.70 ? 1 : 0);
         return new TileLuminanceStats(
             Column: index % 4,
             Row: index / 4,
             AverageLuminance: luminance,
-            Percentile95Luminance: luminance,
+            Percentile95Luminance: percentile95 ?? luminance,
             BrightPixelRatio: brightRatio);
     }
 }
