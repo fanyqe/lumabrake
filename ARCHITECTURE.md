@@ -93,7 +93,7 @@ Decision: when repetitive flashing affects a small tile area, carry the affected
 
 Reason: a flashing advertisement, HUD element, or small preview should be dimmed locally without unnecessarily darkening the rest of the monitor.
 
-Consequence: Phase 6 now has a first working tile-mask path using one click-through overlay window per monitor. Broad flash coverage still falls back to global dimming, and feathered edges plus merged region smoothing remain future work.
+Consequence: Phase 6 now has a padded, merged, and feathered tile-mask path using one click-through overlay window per monitor. Broad flash coverage still falls back to global dimming, and GPU-oriented mask rendering remains future work.
 
 ## ADR-0008: Initial StaticShade Tile State
 

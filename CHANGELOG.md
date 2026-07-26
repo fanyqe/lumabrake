@@ -33,3 +33,4 @@
 - Added CycloneDX SBOM generation to the CI portable artifact.
 - Added periodic runtime monitor topology refresh for basic add, remove, and display-bounds updates.
 - Added StaticShade exposure scoring and CLI presets for OLED, HUD, office, and disabled modes.
+- Added padded regional mask merging and feathered overlay edges for localized dimming.

@@ -27,7 +27,8 @@
 ## 0.4.0 - Localized Masking
 
 - Initial tile regional mask composition.
-- Feathered region edges.
+- Initial padded neighboring-region merge.
+- Initial feathered region edges.
 - Full-screen fallback.
 
 ## 0.5.0 - StaticShade

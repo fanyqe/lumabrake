@@ -31,6 +31,8 @@ The flash detector uses tile-level luminance transitions and red-dominance trans
 
 The dashboard keeps the main protection-event total and appends a red-flash count when red-dominant events have been detected.
 
+Localized masks are padded, merged, and feathered before rendering. If a flashing region covers too much of the frame, LumaBrake still falls back to global dimming instead of drawing many regional masks.
+
 ## StaticShade Presets
 
 StaticShade detects persistent bright regions with bounded tile metrics and exposure scoring. Inspect or apply presets from the CLI:
