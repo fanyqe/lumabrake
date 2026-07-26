@@ -40,6 +40,27 @@
     "hold": "00:00:00.1500000",
     "release": "00:00:00.5000000"
   },
+  "schedules": {
+    "enabled": true,
+    "entries": [
+      {
+        "id": "work",
+        "name": "Work Hours",
+        "enabled": true,
+        "dayMask": 62,
+        "startMinuteOfDay": 540,
+        "endMinuteOfDay": 1020,
+        "manualDimmingOpacity": 0.18,
+        "tint": {
+          "enabled": true,
+          "red": 255,
+          "green": 244,
+          "blue": 230,
+          "opacity": 0.08
+        }
+      }
+    ]
+  },
   "profiles": {
     "entries": [
       {

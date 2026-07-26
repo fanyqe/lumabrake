@@ -74,6 +74,20 @@ dotnet run --project src/LumaBrake.Cli -- profile apply evening
 
 Profile apply updates persisted settings. Restart the dashboard if it is already running and you need the WPF app to load those persisted changes.
 
+## Schedules
+
+Create, pause, resume, or remove named schedules from the CLI:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- schedule set work weekdays 09:00 17:00 18 neutral 8 Work Hours
+dotnet run --project src/LumaBrake.Cli -- schedule disable-entry work
+dotnet run --project src/LumaBrake.Cli -- schedule enable-entry work
+dotnet run --project src/LumaBrake.Cli -- schedule remove work
+dotnet run --project src/LumaBrake.Cli -- schedule list
+```
+
+The days value accepts `everyday`, `weekdays`, `weekend`, or comma-separated day names such as `mon,wed,fri`.
+
 ## Hardware Brightness
 
 Read DDC/CI capability and brightness diagnostics:

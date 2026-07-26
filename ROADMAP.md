@@ -51,7 +51,7 @@
 - Initial CLI startup schedule restoration.
 - Initial runtime scheduled software dimming.
 - Initial software profile save/apply CLI.
-- Richer schedule editing.
+- Initial richer schedule CLI editing.
 
 ## 0.8.0 - Focus Dimming and Tint
 

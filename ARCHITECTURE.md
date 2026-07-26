@@ -147,7 +147,7 @@ Decision: evaluate active schedules inside the controller loop and pass them to 
 
 Reason: schedule dimming is ambient baseline behavior and should not outrank manual overrides, flash protection, spike protection, or adaptive content decisions.
 
-Consequence: schedules now affect running overlays without double-applying manual dimming. Per-monitor schedules, explicit tint-off overrides, richer editors, and deterministic clock injection remain future work.
+Consequence: schedules now affect running overlays without double-applying manual dimming. Per-monitor schedules, explicit tint-off overrides, and deterministic clock injection remain future work.
 
 ## ADR-0015: Guarded Hardware Brightness Writes
 
@@ -172,3 +172,11 @@ Decision: store named profiles as persisted software settings snapshots that inc
 Reason: profiles should make day-to-day overlay behavior repeatable without changing global enablement, schedules, startup restoration, or physical monitor brightness.
 
 Consequence: Phase 14 has CLI save, list, apply, and remove commands for software profiles. Applying a profile updates persisted settings; live dashboard reload, hardware profile targets, per-monitor profiles, and richer editors remain future work.
+
+## ADR-0018: Editable Schedule CLI
+
+Decision: add general schedule set, remove, enable-entry, and disable-entry commands on top of the existing night shortcut while preserving the current schedule JSON shape.
+
+Reason: the model already supports multiple named entries, priority by list order, per-entry enabled state, day masks, dimming, and tint. Editing those entries through the CLI is useful without changing runtime schedule evaluation.
+
+Consequence: Phase 15 has basic named schedule editing with parsed day names and stable upsert/remove helpers. GUI schedule editing, drag-to-reorder priority, per-monitor schedules, explicit tint-off overrides, and clock-injected runtime boundary tests remain future work.

@@ -35,7 +35,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | Focus Dimming | Initial active-window monitor dimming implemented |
 | Optional Tint | Basic CLI-controlled tint implemented |
 | Hardware Brightness | Read-only DDC/CI diagnostics and guarded one-shot CLI writes implemented |
-| Profiles, rules, schedules | Initial software profiles, CLI schedule, startup restoration, and runtime scheduled dimming implemented |
+| Profiles, rules, schedules | Initial software profiles, editable CLI schedules, startup restoration, and runtime scheduled dimming implemented |
 
 ## Build
 
@@ -76,6 +76,10 @@ dotnet run --project src/LumaBrake.Cli -- hardware brightness plan "\\.\DISPLAY2
 dotnet run --project src/LumaBrake.Cli -- hardware writes status
 dotnet run --project src/LumaBrake.Cli -- hardware blacklist add "\\.\DISPLAY2"
 dotnet run --project src/LumaBrake.Cli -- schedule night 22:00 07:00 24 warm 18
+dotnet run --project src/LumaBrake.Cli -- schedule set work weekdays 09:00 17:00 18 neutral 8 Work Hours
+dotnet run --project src/LumaBrake.Cli -- schedule disable-entry work
+dotnet run --project src/LumaBrake.Cli -- schedule enable-entry work
+dotnet run --project src/LumaBrake.Cli -- schedule remove work
 dotnet run --project src/LumaBrake.Cli -- schedule list
 dotnet run --project src/LumaBrake.Cli -- profile save evening Evening Work
 dotnet run --project src/LumaBrake.Cli -- profile list
