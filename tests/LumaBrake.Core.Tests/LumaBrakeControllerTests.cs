@@ -82,6 +82,78 @@ public sealed class LumaBrakeControllerTests
     }
 
     [Fact]
+    public async Task Start_AutomaticallyAddsMonitorWhenCatalogChanges()
+    {
+        var monitors = TestMonitors();
+        var catalog = new MutableMonitorCatalog([monitors[0]]);
+        var capture = new RecordingCapture();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            capture,
+            overlay,
+            new LumaBrakeSettings(),
+            catalog,
+            monitorRefreshInterval: TimeSpan.FromMilliseconds(80));
+
+        controller.Start();
+
+        var initialMonitorAnalyzed = await WaitUntilAsync(
+            () => capture.CaptureCount(monitors[0].StableId) > 0,
+            TimeSpan.FromSeconds(2));
+        Assert.True(initialMonitorAnalyzed);
+
+        catalog.Monitors = monitors;
+
+        var addedMonitorSynced = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                return snapshot.MonitorCount == 2 &&
+                    snapshot.Monitors.Any(monitor => monitor.StableId == monitors[1].StableId) &&
+                    overlay.LastSyncedStableIds.Contains(monitors[1].StableId) &&
+                    capture.CaptureCount(monitors[1].StableId) > 0;
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(addedMonitorSynced);
+    }
+
+    [Fact]
+    public async Task Start_AutomaticallyRemovesMonitorWhenCatalogChanges()
+    {
+        var monitors = TestMonitors();
+        var catalog = new MutableMonitorCatalog(monitors);
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings(),
+            catalog,
+            monitorRefreshInterval: TimeSpan.FromMilliseconds(80));
+
+        controller.Start();
+
+        var bothMonitorsPresent = await WaitUntilAsync(
+            () => controller.Snapshot().MonitorCount == 2,
+            TimeSpan.FromSeconds(2));
+        Assert.True(bothMonitorsPresent);
+
+        catalog.Monitors = [monitors[0]];
+
+        var removedMonitorSynced = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                return snapshot.MonitorCount == 1 &&
+                    snapshot.Monitors.Single().StableId == monitors[0].StableId &&
+                    overlay.LastSyncedStableIds.SequenceEqual([monitors[0].StableId]);
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(removedMonitorSynced);
+    }
+
+    [Fact]
     public void EmergencyDisable_HidesEveryOverlayAndClearsPipelineOpacity()
     {
         var monitors = TestMonitors();

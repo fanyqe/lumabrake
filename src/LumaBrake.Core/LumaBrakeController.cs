@@ -16,6 +16,7 @@ namespace LumaBrake.Core;
 public sealed class LumaBrakeController : IDisposable
 {
     private const double RegionalFlashFallbackRatio = 0.35;
+    private static readonly TimeSpan DefaultMonitorRefreshInterval = TimeSpan.FromSeconds(2);
 
     private readonly IFrameCapture _capture;
     private readonly IOverlayRenderer _overlay;
@@ -23,11 +24,13 @@ public sealed class LumaBrakeController : IDisposable
     private readonly EffectComposer _composer = new();
     private readonly IMonitorCatalog _monitorCatalog;
     private readonly IFocusedMonitorProvider _focusedMonitorProvider;
+    private readonly TimeSpan _monitorRefreshInterval;
     private readonly Dictionary<string, MonitorPipeline> _pipelines = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
     private Task? _loop;
     private bool _disposed;
+    private DateTimeOffset _nextMonitorRefreshAt = DateTimeOffset.MinValue;
     private IReadOnlyList<MonitorDescriptor> _monitors = Array.Empty<MonitorDescriptor>();
     private string _monitorStatus = "Monitor list has not been refreshed.";
 
@@ -36,13 +39,15 @@ public sealed class LumaBrakeController : IDisposable
         IOverlayRenderer overlay,
         LumaBrakeSettings settings,
         IMonitorCatalog monitorCatalog,
-        IFocusedMonitorProvider? focusedMonitorProvider = null)
+        IFocusedMonitorProvider? focusedMonitorProvider = null,
+        TimeSpan? monitorRefreshInterval = null)
     {
         _capture = capture;
         _overlay = overlay;
         Settings = settings;
         _monitorCatalog = monitorCatalog;
         _focusedMonitorProvider = focusedMonitorProvider ?? NoFocusedMonitorProvider.Instance;
+        _monitorRefreshInterval = monitorRefreshInterval ?? DefaultMonitorRefreshInterval;
         RefreshMonitors();
     }
 
@@ -162,6 +167,11 @@ public sealed class LumaBrakeController : IDisposable
 
     public void RefreshMonitors()
     {
+        RefreshMonitorsCore(forcePublish: true);
+    }
+
+    private bool RefreshMonitorsCore(bool forcePublish)
+    {
         IReadOnlyList<MonitorDescriptor> monitors;
         string monitorStatus;
         try
@@ -175,8 +185,17 @@ public sealed class LumaBrakeController : IDisposable
             monitorStatus = "Monitor detection failed.";
         }
 
+        var changed = false;
         lock (_gate)
         {
+            changed = !MonitorTopologyEquals(_monitors, monitors) ||
+                !string.Equals(_monitorStatus, monitorStatus, StringComparison.Ordinal);
+
+            if (!changed && !forcePublish)
+            {
+                return false;
+            }
+
             _monitors = monitors;
             _monitorStatus = monitorStatus;
 
@@ -200,6 +219,7 @@ public sealed class LumaBrakeController : IDisposable
 
         _overlay.SyncMonitors(monitors);
         PublishSnapshot();
+        return changed;
     }
 
     public void Dispose()
@@ -233,6 +253,8 @@ public sealed class LumaBrakeController : IDisposable
         {
             try
             {
+                RefreshMonitorsIfDue(DateTimeOffset.UtcNow);
+
                 if (Settings.Enabled)
                 {
                     AnalyzeAndRender();
@@ -248,6 +270,17 @@ public sealed class LumaBrakeController : IDisposable
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
             }
         }
+    }
+
+    private void RefreshMonitorsIfDue(DateTimeOffset now)
+    {
+        if (now < _nextMonitorRefreshAt)
+        {
+            return;
+        }
+
+        _nextMonitorRefreshAt = now + _monitorRefreshInterval;
+        RefreshMonitorsCore(forcePublish: false);
     }
 
     private void AnalyzeAndRender()
@@ -467,6 +500,12 @@ public sealed class LumaBrakeController : IDisposable
     {
         SnapshotUpdated?.Invoke(this, Snapshot());
     }
+
+    private static bool MonitorTopologyEquals(
+        IReadOnlyList<MonitorDescriptor> current,
+        IReadOnlyList<MonitorDescriptor> next) =>
+        current.Count == next.Count &&
+        current.SequenceEqual(next);
 
     private static MonitorPipelineSnapshot ToSnapshot(MonitorPipeline pipeline) =>
         new(
