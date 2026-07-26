@@ -46,6 +46,22 @@ dotnet run --project src/LumaBrake.Cli -- capture-test
 dotnet run --project src/LumaBrake.Cli -- monitor list
 ```
 
+## Focus Dimming
+
+Focus dimming is disabled by default. Enable it and adjust opacity from the CLI:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- focus enable
+dotnet run --project src/LumaBrake.Cli -- focus opacity 22
+```
+
+If it does not change any monitor, confirm multiple monitors are detected and that the foreground app is on one of those monitors:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- status
+dotnet run --project src/LumaBrake.Cli -- monitor list
+```
+
 ## Hardware Brightness
 
 Read DDC/CI capability and brightness diagnostics:

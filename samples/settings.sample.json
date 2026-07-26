@@ -33,5 +33,11 @@
     "minimumReadInterval": "00:00:05",
     "minimumWriteInterval": "00:00:10",
     "blacklistedDisplayDeviceNames": []
+  },
+  "focusDimming": {
+    "enabled": false,
+    "opacity": 0.16,
+    "hold": "00:00:00.1500000",
+    "release": "00:00:00.5000000"
   }
 }

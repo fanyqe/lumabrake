@@ -56,6 +56,7 @@
 
 - Basic CLI-controlled tint layer.
 - Active-window focus dimming.
+- Focus dimming CLI controls.
 - Tint schedules and per-monitor tint.
 
 ## 1.0.0 - Stable Release

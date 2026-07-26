@@ -11,7 +11,7 @@ LumaBrake is a native Windows desktop application split into testable domain log
 - `LumaBrake.Capture`: current GDI per-monitor downscaled capture path.
 - `LumaBrake.Rendering`: click-through overlay windows, one per active monitor.
 - `LumaBrake.MonitorControl`: DDC/CI capability, brightness read, and guarded one-shot brightness write interop for physical monitors.
-- `LumaBrake.Platform.Windows`: Win32 interop for hotkeys, capture, monitor bounds, overlay styles.
+- `LumaBrake.Platform.Windows`: Win32 interop for hotkeys, capture, monitor bounds, foreground-window monitor ownership, and overlay styles.
 - `LumaBrake.Persistence`: local JSON settings with atomic replace.
 - `LumaBrake.Diagnostics`: pipeline snapshots for UI and future export.
 - `LumaBrake.Cli`: automation entry point for basic settings.
@@ -30,6 +30,7 @@ Each active monitor
   -> per-monitor StaticShadeDetector
   -> per-monitor AdaptiveContentDimmingDetector
   -> per-monitor InactiveMonitorDimmingDetector for non-primary displays
+  -> foreground monitor lookup for optional focus dimming
   -> active schedule request as a low-priority runtime effect
   -> per-monitor EffectEnvelope
   -> EffectComposer with optional tint
@@ -112,9 +113,9 @@ Consequence: Phase 8 has a first smooth bright-scene dimming path with duration,
 
 Decision: dim only non-primary monitors when their analyzed luminance metrics stay effectively unchanged for a configured duration.
 
-Reason: unchanged-frame detection is deterministic and available in the existing local analysis loop, while cursor/foreground-window attribution needs a separate Windows activity model.
+Reason: unchanged-frame detection is deterministic and available in the existing local analysis loop, while cursor attribution and app-specific activity exceptions need a separate Windows activity model.
 
-Consequence: Phase 8 now has a first inactive-monitor response that restores when frame metrics change. Cursor entry, foreground-window ownership, video exceptions, and blackout mode remain future work.
+Consequence: Phase 8 now has a first inactive-monitor response that restores when frame metrics change. Cursor entry, video exceptions, and blackout mode remain future work.
 
 ## ADR-0011: Optional Tint Render Layer
 
@@ -155,3 +156,11 @@ Decision: expose hardware brightness writes only as a one-shot CLI path that tar
 Reason: DDC/CI writes can alter real monitor state and can behave inconsistently across displays. The runtime overlay loop should remain software-only until hardware behavior has broader recovery, timeout, and profile handling.
 
 Consequence: Phase 12 has a safe write gate and state-backed rate limiting without automatic runtime hardware dimming. Future work still needs reconnect recovery, maximum-step policy, richer monitor identity matching, and schedule/profile integration before hardware writes are used outside explicit CLI commands.
+
+## ADR-0016: Initial Focus Dimming
+
+Decision: resolve the monitor that owns the current foreground window once per controller tick, then add a low-priority `FocusDimming` request only to other known monitors when the user enables focus dimming.
+
+Reason: foreground-window ownership is a local Windows signal and can dim unused monitors without inspecting screen content or persisting raw frames. The effect must stay below spike, flash, static, inactive, and adaptive protection so safety responses remain the reported active reason.
+
+Consequence: Phase 13 has default-disabled focus dimming with CLI controls and testable provider injection. Future work still needs richer app/window rules, cursor-aware behavior, and per-monitor profiles.

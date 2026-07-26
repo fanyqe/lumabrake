@@ -2,7 +2,7 @@
 
 LumaBrake is an open-source Windows utility that analyzes screen luminance in real time and reduces sudden brightness spikes, repetitive flashes, static bright regions, and unnecessary brightness on inactive displays.
 
-The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, optional tint, DDC/CI hardware brightness diagnostics with guarded one-shot writes, and initial runtime schedules:
+The current working slices cover Brightness Spike Guard, an initial Repetitive Flash Guard, tile-based localized flash masks, StaticShade, adaptive content dimming, initial inactive-monitor dimming, focus dimming, optional tint, DDC/CI hardware brightness diagnostics with guarded one-shot writes, and initial runtime schedules:
 
 - processing stays local;
 - raw screen samples are discarded after analysis;
@@ -32,7 +32,7 @@ LumaBrake is not a medical device and does not guarantee seizure prevention or O
 | StaticShade | Initial static bright tile masking implemented |
 | Adaptive Content Dimming | Initial persistent bright-scene dimming implemented |
 | Inactive Monitor Dimming | Initial non-primary unchanged-frame dimming implemented |
-| Focus Dimming | Roadmap |
+| Focus Dimming | Initial active-window monitor dimming implemented |
 | Optional Tint | Basic CLI-controlled tint implemented |
 | Hardware Brightness | Read-only DDC/CI diagnostics and guarded one-shot CLI writes implemented |
 | Profiles, rules, schedules | Initial CLI schedule, startup restoration, and runtime scheduled dimming implemented |
@@ -63,6 +63,9 @@ dotnet run --project src/LumaBrake.Cli -- status
 dotnet run --project src/LumaBrake.Cli -- disable
 dotnet run --project src/LumaBrake.Cli -- safe-mode
 dotnet run --project src/LumaBrake.Cli -- dim 25
+dotnet run --project src/LumaBrake.Cli -- focus status
+dotnet run --project src/LumaBrake.Cli -- focus enable
+dotnet run --project src/LumaBrake.Cli -- focus opacity 22
 dotnet run --project src/LumaBrake.Cli -- tint warm 10
 dotnet run --project src/LumaBrake.Cli -- tint off
 dotnet run --project src/LumaBrake.Cli -- capture-test
