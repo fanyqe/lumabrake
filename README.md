@@ -51,6 +51,8 @@ dotnet test LumaBrake.sln --no-build
 
 The local development machine can also use the user-local SDK installed at `%USERPROFILE%\.dotnet`.
 
+CI publishes a self-contained `win-x64` portable package that includes the runtime needed to launch `LumaBrake.App.exe` and `LumaBrake.Cli.exe`.
+
 ## Run
 
 ```powershell

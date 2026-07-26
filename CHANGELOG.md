@@ -35,3 +35,4 @@
 - Added StaticShade exposure scoring and CLI presets for OLED, HUD, office, and disabled modes.
 - Added padded regional mask merging and feathered overlay edges for localized dimming.
 - Added CLI-managed current-user Windows startup registration with background tray launch.
+- Changed the CI portable ZIP to self-contained `win-x64` publishing.
