@@ -47,9 +47,9 @@
 - Read-only DDC/CI capability detection.
 - Read-only hardware brightness reading.
 - Hardware brightness rate-limit policy and display blacklist.
+- Guarded one-shot hardware brightness writes.
 - Initial CLI startup schedule restoration.
 - Initial runtime scheduled software dimming.
-- Safe hardware brightness writes.
 - Profile integration and richer schedule editing.
 
 ## 0.8.0 - Focus Dimming and Tint

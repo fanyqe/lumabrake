@@ -16,6 +16,8 @@ To clear CLI-configured manual dimming:
 dotnet run --project src/LumaBrake.Cli -- dim off
 ```
 
+Safe Mode also disables persisted hardware brightness write permission. Read-only hardware brightness diagnostics remain available from the CLI.
+
 ## Overlay Does Not Appear
 
 - Confirm the app is enabled.
@@ -43,6 +45,23 @@ dotnet run --project src/LumaBrake.Cli -- capture-test
 ```powershell
 dotnet run --project src/LumaBrake.Cli -- monitor list
 ```
+
+## Hardware Brightness
+
+Read DDC/CI capability and brightness diagnostics:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- hardware list
+dotnet run --project src/LumaBrake.Cli -- hardware brightness
+```
+
+Plan a one-shot hardware write without changing the monitor:
+
+```powershell
+dotnet run --project src/LumaBrake.Cli -- hardware brightness plan "\\.\DISPLAY2" 0 70
+```
+
+Hardware writes are disabled by default. A real write requires `hardware writes enable`, a single display device, a physical monitor index from the diagnostic output, rate-limit clearance, no blacklist match, and `--confirm-hardware-write`.
 
 ## Diagnostics Package
 

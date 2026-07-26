@@ -10,7 +10,7 @@ LumaBrake is a native Windows desktop application split into testable domain log
 - `LumaBrake.Effects`: centralized opacity composition and release envelopes.
 - `LumaBrake.Capture`: current GDI per-monitor downscaled capture path.
 - `LumaBrake.Rendering`: click-through overlay windows, one per active monitor.
-- `LumaBrake.MonitorControl`: read-only DDC/CI capability discovery for physical monitors.
+- `LumaBrake.MonitorControl`: DDC/CI capability, brightness read, and guarded one-shot brightness write interop for physical monitors.
 - `LumaBrake.Platform.Windows`: Win32 interop for hotkeys, capture, monitor bounds, overlay styles.
 - `LumaBrake.Persistence`: local JSON settings with atomic replace.
 - `LumaBrake.Diagnostics`: pipeline snapshots for UI and future export.
@@ -130,7 +130,7 @@ Decision: expose hardware brightness support first as read-only `lumabrake hardw
 
 Reason: DDC/CI calls can be slow or unreliable on some displays, so hardware control must be introduced separately from the low-latency capture, analysis, and overlay loop.
 
-Consequence: Phase 10 now has a safe capability and brightness-read base plus rate-limit and blacklist policy defaults. Brightness writes, reconnect recovery, and schedule/profile integration remain future work.
+Consequence: Phase 10 now has a safe capability and brightness-read base plus rate-limit and blacklist policy defaults. Reconnect recovery, runtime hardware brightness, and schedule/profile integration remain future work.
 
 ## ADR-0013: Startup Schedule Foundation
 
@@ -147,3 +147,11 @@ Decision: evaluate active schedules inside the controller loop and pass them to 
 Reason: schedule dimming is ambient baseline behavior and should not outrank manual overrides, flash protection, spike protection, or adaptive content decisions.
 
 Consequence: schedules now affect running overlays without double-applying manual dimming. Per-monitor schedules, explicit tint-off overrides, richer editors, and deterministic clock injection remain future work.
+
+## ADR-0015: Guarded Hardware Brightness Writes
+
+Decision: expose hardware brightness writes only as a one-shot CLI path that targets one display device plus one physical monitor index and requires persisted write permission, blacklist clearance, durable write-interval clearance, and `--confirm-hardware-write`.
+
+Reason: DDC/CI writes can alter real monitor state and can behave inconsistently across displays. The runtime overlay loop should remain software-only until hardware behavior has broader recovery, timeout, and profile handling.
+
+Consequence: Phase 12 has a safe write gate and state-backed rate limiting without automatic runtime hardware dimming. Future work still needs reconnect recovery, maximum-step policy, richer monitor identity matching, and schedule/profile integration before hardware writes are used outside explicit CLI commands.

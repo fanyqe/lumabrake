@@ -26,5 +26,12 @@
     "maximumOpacity": 0.62,
     "hold": "00:00:00.3200000",
     "release": "00:00:00.9500000"
+  },
+  "hardwareBrightness": {
+    "enabled": false,
+    "allowWrites": false,
+    "minimumReadInterval": "00:00:05",
+    "minimumWriteInterval": "00:00:10",
+    "blacklistedDisplayDeviceNames": []
   }
 }
