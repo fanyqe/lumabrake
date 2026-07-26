@@ -9,5 +9,6 @@ public enum EffectReason
     StaticShade = 40,
     InactiveMonitor = 45,
     AdaptiveContent = 50,
+    FocusDimming = 55,
     Scheduled = 60
 }

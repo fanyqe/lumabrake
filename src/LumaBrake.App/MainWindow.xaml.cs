@@ -133,6 +133,7 @@ public partial class MainWindow : Window
         EffectReason.StaticShade => "Static shade",
         EffectReason.InactiveMonitor => "Inactive monitor",
         EffectReason.AdaptiveContent => "Adaptive content",
+        EffectReason.FocusDimming => "Focus dimming",
         EffectReason.Scheduled => "Scheduled dimming",
         _ => "None"
     };

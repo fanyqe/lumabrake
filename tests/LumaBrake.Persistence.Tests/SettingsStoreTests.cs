@@ -1,4 +1,5 @@
 using LumaBrake.Persistence;
+using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Hardware;
 using LumaBrake.Domain.Schedules;
@@ -22,6 +23,8 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Empty(settings.Schedules.Entries);
         Assert.True(settings.StartupRestoration.Enabled);
         Assert.True(settings.StartupRestoration.ApplySchedules);
+        Assert.False(settings.FocusDimming.Enabled);
+        Assert.Equal(0.16, settings.FocusDimming.Opacity, precision: 12);
         Assert.False(settings.HardwareBrightness.Enabled);
         Assert.False(settings.HardwareBrightness.AllowWrites);
         Assert.Empty(settings.HardwareBrightness.BlacklistedDisplayDeviceNames);
@@ -52,6 +55,11 @@ public sealed class SettingsStoreTests : IDisposable
                     }
                 ]
             },
+            FocusDimming = new FocusDimmingOptions
+            {
+                Enabled = true,
+                Opacity = 0.18
+            },
             HardwareBrightness = new HardwareBrightnessOptions
             {
                 Enabled = true,
@@ -70,6 +78,8 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.Equal("night", schedule.Id);
         Assert.Equal(0.22, schedule.ManualDimmingOpacity, precision: 12);
         Assert.True(schedule.Tint.Enabled);
+        Assert.True(loaded.FocusDimming.Enabled);
+        Assert.Equal(0.18, loaded.FocusDimming.Opacity, precision: 12);
         Assert.True(loaded.HardwareBrightness.Enabled);
         Assert.False(loaded.HardwareBrightness.AllowWrites);
         Assert.Equal([@"\\.\DISPLAY3"], loaded.HardwareBrightness.BlacklistedDisplayDeviceNames);
@@ -97,6 +107,8 @@ public sealed class SettingsStoreTests : IDisposable
         Assert.False(loaded.Schedules.Enabled);
         Assert.Empty(loaded.Schedules.Entries);
         Assert.True(loaded.StartupRestoration.Enabled);
+        Assert.False(loaded.FocusDimming.Enabled);
+        Assert.Equal(0.16, loaded.FocusDimming.Opacity, precision: 12);
         Assert.False(loaded.HardwareBrightness.Enabled);
         Assert.False(loaded.HardwareBrightness.AllowWrites);
     }

@@ -3,6 +3,7 @@ using LumaBrake.Analysis.Frames;
 using LumaBrake.Capture;
 using LumaBrake.Cli;
 using LumaBrake.Diagnostics;
+using LumaBrake.Domain.Analysis;
 using LumaBrake.Domain.Effects;
 using LumaBrake.Domain.Monitors;
 using LumaBrake.Persistence;
@@ -23,6 +24,8 @@ switch (command)
             : "Tint: off");
         Console.WriteLine($"Schedules: {(settings.Schedules.Enabled ? "enabled" : "disabled")}, {settings.Schedules.Entries.Length.ToString(CultureInfo.InvariantCulture)} configured");
         Console.WriteLine($"Startup restoration: {(settings.StartupRestoration.Enabled ? "enabled" : "disabled")}");
+        var focusDimming = settings.FocusDimming.Clamp();
+        Console.WriteLine($"Focus dimming: {(focusDimming.Enabled ? "enabled" : "disabled")} {Math.Round(focusDimming.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
         var activeSchedule = settings.Schedules.ActiveAt(DateTimeOffset.Now);
         Console.WriteLine(activeSchedule is null ? "Active schedule: none" : $"Active schedule: {activeSchedule.Name}");
         return 0;
@@ -83,6 +86,9 @@ switch (command)
             ? $"Tint: #{tintOptions.Red:X2}{tintOptions.Green:X2}{tintOptions.Blue:X2} {Math.Round(tintOptions.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%"
             : "Tint: off");
         return 0;
+
+    case "focus":
+        return RunFocusCommand(args, store, settings);
 
     case "capture-test":
         var primaryMonitor = PrimaryMonitor.Get();
@@ -159,8 +165,65 @@ switch (command)
         return 2;
 
     default:
-        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|capture-test|monitor list|hardware <list|brightness|writes|blacklist>|schedule <list|enable|disable|clear|night>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
+        Console.Error.WriteLine("Usage: lumabrake status|enable|disable|safe-mode|dim <0-90|off>|tint <off|warm|neutral> [0-60]|focus <status|enable|disable|opacity>|capture-test|monitor list|hardware <list|brightness|writes|blacklist>|schedule <list|enable|disable|clear|night>|startup-restore <status|enable|disable>|diagnostics export [output.zip]");
         return 2;
+}
+
+static int RunFocusCommand(IReadOnlyList<string> args, SettingsStore store, LumaBrakeSettings settings)
+{
+    if (args.Count < 2)
+    {
+        Console.Error.WriteLine("Usage: lumabrake focus <status|enable|disable|opacity> [0-60|off]");
+        return 2;
+    }
+
+    var options = settings.FocusDimming.Clamp();
+    switch (args[1].ToLowerInvariant())
+    {
+        case "status":
+            Console.WriteLine($"Focus dimming: {(options.Enabled ? "enabled" : "disabled")}");
+            Console.WriteLine($"Focus dimming opacity: {Math.Round(options.Opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%");
+            return 0;
+
+        case "enable":
+            store.Save(settings with { FocusDimming = options with { Enabled = true } });
+            Console.WriteLine("Focus dimming enabled.");
+            return 0;
+
+        case "disable":
+            store.Save(settings with { FocusDimming = options with { Enabled = false } });
+            Console.WriteLine("Focus dimming disabled.");
+            return 0;
+
+        case "opacity":
+            if (args.Count < 3)
+            {
+                Console.Error.WriteLine("Usage: lumabrake focus opacity <0-60|off>");
+                return 2;
+            }
+
+            double opacity;
+            try
+            {
+                opacity = ParseFocusOpacity(args[2]);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+                Console.Error.WriteLine("Usage: lumabrake focus opacity <0-60|off>");
+                return 2;
+            }
+
+            store.Save(settings with { FocusDimming = options with { Enabled = options.Enabled && opacity > 0, Opacity = opacity } });
+            Console.WriteLine(opacity > 0
+                ? $"Focus dimming opacity: {Math.Round(opacity * 100).ToString("0", CultureInfo.InvariantCulture)}%"
+                : "Focus dimming disabled.");
+            return 0;
+
+        default:
+            Console.Error.WriteLine("Usage: lumabrake focus <status|enable|disable|opacity> [0-60|off]");
+            return 2;
+    }
 }
 
 static double ParseManualOpacity(string value)
@@ -178,6 +241,23 @@ static double ParseManualOpacity(string value)
 
     var opacity = parsed > 1 ? parsed / 100.0 : parsed;
     return Math.Clamp(opacity, 0, 0.90);
+}
+
+static double ParseFocusOpacity(string value)
+{
+    if (string.Equals(value, "off", StringComparison.OrdinalIgnoreCase))
+    {
+        return 0;
+    }
+
+    var normalized = value.Trim().TrimEnd('%');
+    if (!double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+    {
+        throw new ArgumentException("Focus dimming opacity must be a percentage from 0 to 60.", nameof(value));
+    }
+
+    var opacity = parsed > 1 ? parsed / 100.0 : parsed;
+    return Math.Clamp(opacity, 0, 0.60);
 }
 
 static string KeyValue(string key, string value)

@@ -363,6 +363,164 @@ public sealed class LumaBrakeControllerTests
     }
 
     [Fact]
+    public async Task Start_DimsOnlyMonitorsOutsideFocusedMonitor()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                FocusDimming = new FocusDimmingOptions
+                {
+                    Enabled = true,
+                    Opacity = 0.17,
+                    Hold = TimeSpan.FromMilliseconds(250),
+                    Release = TimeSpan.FromMilliseconds(250)
+                }
+            },
+            new MutableMonitorCatalog(monitors),
+            new FixedFocusedMonitorProvider(monitors[0].StableId));
+
+        controller.Start();
+
+        var focusDimmingApplied = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                var primary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[0].StableId);
+                var secondary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[1].StableId);
+                return primary.ActiveReason == EffectReason.None &&
+                    secondary.ActiveReason == EffectReason.FocusDimming &&
+                    Math.Abs(secondary.OverlayOpacity - 0.17) < 0.001 &&
+                    overlay.LastEffect(monitors[1].StableId)?.GlobalReason == EffectReason.FocusDimming;
+            },
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(focusDimmingApplied);
+    }
+
+    [Fact]
+    public async Task Start_SkipsFocusDimmingWhenFocusedMonitorIsUnknown()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                FocusDimming = new FocusDimmingOptions { Enabled = true, Opacity = 0.17 }
+            },
+            new MutableMonitorCatalog(monitors),
+            new FixedFocusedMonitorProvider("missing-monitor"));
+
+        controller.Start();
+
+        var framesAnalyzed = await WaitUntilAsync(
+            () => controller.Snapshot().FramesAnalyzed >= monitors.Length,
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(framesAnalyzed);
+        Assert.All(controller.Snapshot().Monitors, monitor =>
+        {
+            Assert.Equal(EffectReason.None, monitor.ActiveReason);
+            Assert.Equal(0, monitor.OverlayOpacity);
+        });
+    }
+
+    [Fact]
+    public async Task Start_SkipsFocusDimmingWhenFocusedMonitorProviderFails()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                FocusDimming = new FocusDimmingOptions { Enabled = true, Opacity = 0.17 }
+            },
+            new MutableMonitorCatalog(monitors),
+            ThrowingFocusedMonitorProvider.Instance);
+
+        controller.Start();
+
+        var framesAnalyzed = await WaitUntilAsync(
+            () => controller.Snapshot().FramesAnalyzed >= monitors.Length,
+            TimeSpan.FromSeconds(2));
+
+        Assert.True(framesAnalyzed);
+        Assert.True(controller.Settings.Enabled);
+        Assert.All(controller.Snapshot().Monitors, monitor =>
+        {
+            Assert.Equal(EffectReason.None, monitor.ActiveReason);
+            Assert.Equal(0, monitor.OverlayOpacity);
+        });
+        Assert.Equal(1, overlay.HideAllCalls);
+    }
+
+    [Fact]
+    public async Task Start_ReleasesFocusDimmingWhenFocusMovesToAnotherMonitor()
+    {
+        var monitors = TestMonitors();
+        var overlay = new RecordingOverlay();
+        var focusedMonitorProvider = new MutableFocusedMonitorProvider(monitors[0].StableId);
+        using var controller = new LumaBrakeController(
+            new RecordingCapture(),
+            overlay,
+            new LumaBrakeSettings
+            {
+                SpikeGuard = new SpikeDetectorOptions { MinimumActivationLuminance = 2 },
+                AdaptiveContent = new AdaptiveContentOptions { Enabled = false },
+                InactiveMonitor = new InactiveMonitorOptions { Enabled = false },
+                FocusDimming = new FocusDimmingOptions
+                {
+                    Enabled = true,
+                    Opacity = 0.17,
+                    Hold = TimeSpan.FromMilliseconds(20),
+                    Release = TimeSpan.FromMilliseconds(40)
+                }
+            },
+            new MutableMonitorCatalog(monitors),
+            focusedMonitorProvider);
+
+        controller.Start();
+
+        var secondaryDimmed = await WaitUntilAsync(
+            () => controller.Snapshot().Monitors.Single(monitor => monitor.StableId == monitors[1].StableId).ActiveReason == EffectReason.FocusDimming,
+            TimeSpan.FromSeconds(2));
+        Assert.True(secondaryDimmed);
+
+        focusedMonitorProvider.FocusedStableId = monitors[1].StableId;
+
+        var focusMoved = await WaitUntilAsync(
+            () =>
+            {
+                var snapshot = controller.Snapshot();
+                var primary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[0].StableId);
+                var secondary = snapshot.Monitors.Single(monitor => monitor.StableId == monitors[1].StableId);
+                return primary.ActiveReason == EffectReason.FocusDimming &&
+                    secondary.ActiveReason == EffectReason.None &&
+                    primary.OverlayOpacity > 0 &&
+                    secondary.OverlayOpacity == 0;
+            },
+            TimeSpan.FromSeconds(3));
+
+        Assert.True(focusMoved);
+    }
+
+    [Fact]
     public async Task Start_RendersTintWithoutAutomaticDimming()
     {
         var monitors = TestMonitors();
@@ -573,6 +731,38 @@ public sealed class LumaBrakeControllerTests
         public IReadOnlyList<MonitorDescriptor> Monitors { get; set; }
 
         public IReadOnlyList<MonitorDescriptor> GetMonitors() => Monitors;
+    }
+
+    private sealed class FixedFocusedMonitorProvider : IFocusedMonitorProvider
+    {
+        private readonly string? _focusedStableId;
+
+        public FixedFocusedMonitorProvider(string? focusedStableId)
+        {
+            _focusedStableId = focusedStableId;
+        }
+
+        public string? FocusedMonitorStableId(IReadOnlyList<MonitorDescriptor> monitors) => _focusedStableId;
+    }
+
+    private sealed class MutableFocusedMonitorProvider : IFocusedMonitorProvider
+    {
+        public MutableFocusedMonitorProvider(string? focusedStableId)
+        {
+            FocusedStableId = focusedStableId;
+        }
+
+        public string? FocusedStableId { get; set; }
+
+        public string? FocusedMonitorStableId(IReadOnlyList<MonitorDescriptor> monitors) => FocusedStableId;
+    }
+
+    private sealed class ThrowingFocusedMonitorProvider : IFocusedMonitorProvider
+    {
+        public static readonly ThrowingFocusedMonitorProvider Instance = new();
+
+        public string? FocusedMonitorStableId(IReadOnlyList<MonitorDescriptor> monitors) =>
+            throw new InvalidOperationException("Focus lookup failed.");
     }
 
     private sealed class RecordingCapture : IFrameCapture

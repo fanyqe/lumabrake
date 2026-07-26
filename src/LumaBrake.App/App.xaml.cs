@@ -32,7 +32,12 @@ public partial class App : System.Windows.Application
         }
 
         var overlay = new OverlayRendererSet(Dispatcher);
-        _controller = new LumaBrakeController(new GdiMonitorCapture(), overlay, settings, new WindowsMonitorEnumerator());
+        _controller = new LumaBrakeController(
+            new GdiMonitorCapture(),
+            overlay,
+            settings,
+            new WindowsMonitorEnumerator(),
+            new WindowsFocusedMonitorProvider());
         _controller.Start();
 
         _dashboard = new MainWindow(_controller, _settingsStore);

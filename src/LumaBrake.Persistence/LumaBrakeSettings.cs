@@ -23,6 +23,8 @@ public sealed record LumaBrakeSettings
 
     public InactiveMonitorOptions InactiveMonitor { get; init; } = new();
 
+    public FocusDimmingOptions FocusDimming { get; init; } = new();
+
     public TintOptions Tint { get; init; } = new();
 
     public ScheduleOptions Schedules { get; init; } = new();

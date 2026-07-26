@@ -130,4 +130,43 @@ public sealed class EffectComposerTests
         Assert.Equal(0.28, state.GlobalOpacity, precision: 3);
         Assert.Equal(EffectReason.AdaptiveContent, state.GlobalReason);
     }
+
+    [Fact]
+    public void Compose_TreatsFocusDimmingAsLowerPriorityThanAdaptiveContentAndHigherThanSchedule()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+
+        var state = new EffectComposer().Compose(
+            [
+                new EffectRequest(EffectReason.Scheduled, 0.20, now, TimeSpan.Zero, TimeSpan.Zero),
+                new EffectRequest(EffectReason.FocusDimming, 0.16, now, TimeSpan.Zero, TimeSpan.Zero),
+                new EffectRequest(EffectReason.AdaptiveContent, 0.10, now, TimeSpan.Zero, TimeSpan.Zero)
+            ],
+            userMaximumOpacity: 0.90);
+
+        Assert.Equal(0.395, state.GlobalOpacity, precision: 3);
+        Assert.Equal(EffectReason.AdaptiveContent, state.GlobalReason);
+        Assert.Contains(nameof(EffectReason.FocusDimming), state.Reasons);
+    }
+
+    [Theory]
+    [InlineData(EffectReason.Manual)]
+    [InlineData(EffectReason.RepetitiveFlash)]
+    [InlineData(EffectReason.BrightnessSpike)]
+    [InlineData(EffectReason.StaticShade)]
+    [InlineData(EffectReason.InactiveMonitor)]
+    [InlineData(EffectReason.AdaptiveContent)]
+    public void Compose_NeverLetsFocusDimmingWinOverProtectiveReasons(EffectReason protectiveReason)
+    {
+        var now = DateTimeOffset.UnixEpoch;
+
+        var state = new EffectComposer().Compose(
+            [
+                new EffectRequest(EffectReason.FocusDimming, 0.16, now, TimeSpan.Zero, TimeSpan.Zero),
+                new EffectRequest(protectiveReason, 0.10, now, TimeSpan.Zero, TimeSpan.Zero)
+            ],
+            userMaximumOpacity: 0.90);
+
+        Assert.Equal(protectiveReason, state.GlobalReason);
+    }
 }

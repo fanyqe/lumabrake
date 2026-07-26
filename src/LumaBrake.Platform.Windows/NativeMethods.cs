@@ -10,6 +10,7 @@ public static partial class NativeMethods
     public const int WsExToolWindow = 0x00000080;
     public const int WsExNoActivate = 0x08000000;
     public const int WdaExcludefromcapture = 0x00000011;
+    public const uint MonitorDefaultToNull = 0x00000000;
     public const int ModAlt = 0x0001;
     public const int ModControl = 0x0002;
     public const int ModShift = 0x0004;
@@ -41,6 +42,12 @@ public static partial class NativeMethods
     [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool SetWindowDisplayAffinity(IntPtr hWnd, int dwAffinity);
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    public static partial IntPtr GetForegroundWindow();
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    public static partial IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
     [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

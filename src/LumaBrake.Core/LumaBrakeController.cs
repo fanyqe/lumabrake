@@ -22,6 +22,7 @@ public sealed class LumaBrakeController : IDisposable
     private readonly Bgra32FrameAnalyzer _analyzer = new();
     private readonly EffectComposer _composer = new();
     private readonly IMonitorCatalog _monitorCatalog;
+    private readonly IFocusedMonitorProvider _focusedMonitorProvider;
     private readonly Dictionary<string, MonitorPipeline> _pipelines = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _shutdown = new();
     private readonly object _gate = new();
@@ -30,12 +31,18 @@ public sealed class LumaBrakeController : IDisposable
     private IReadOnlyList<MonitorDescriptor> _monitors = Array.Empty<MonitorDescriptor>();
     private string _monitorStatus = "Monitor list has not been refreshed.";
 
-    public LumaBrakeController(IFrameCapture capture, IOverlayRenderer overlay, LumaBrakeSettings settings, IMonitorCatalog monitorCatalog)
+    public LumaBrakeController(
+        IFrameCapture capture,
+        IOverlayRenderer overlay,
+        LumaBrakeSettings settings,
+        IMonitorCatalog monitorCatalog,
+        IFocusedMonitorProvider? focusedMonitorProvider = null)
     {
         _capture = capture;
         _overlay = overlay;
         Settings = settings;
         _monitorCatalog = monitorCatalog;
+        _focusedMonitorProvider = focusedMonitorProvider ?? NoFocusedMonitorProvider.Instance;
         RefreshMonitors();
     }
 
@@ -258,6 +265,8 @@ public sealed class LumaBrakeController : IDisposable
             return;
         }
 
+        var focusedMonitorStableId = FocusedMonitorStableId(pipelines.Select(pipeline => pipeline.Monitor).ToArray());
+
         foreach (var pipeline in pipelines)
         {
             var captured = _capture.Capture(pipeline.Monitor);
@@ -338,6 +347,17 @@ public sealed class LumaBrakeController : IDisposable
                 }
 
                 var now = DateTimeOffset.UtcNow;
+                var focusDimming = Settings.FocusDimming.Clamp();
+                if (AppliesFocusDimming(current.Monitor, focusedMonitorStableId, focusDimming))
+                {
+                    current.Envelope.Add(new EffectRequest(
+                        EffectReason.FocusDimming,
+                        focusDimming.Opacity,
+                        now,
+                        focusDimming.Hold,
+                        focusDimming.Release));
+                }
+
                 var activeRequests = current.Envelope.ActiveAt(now).ToList();
                 var activeSchedule = Settings.Schedules.ActiveAt(now.ToLocalTime())?.Clamp();
                 if (Settings.ManualDimmingOpacity > 0)
@@ -372,6 +392,35 @@ public sealed class LumaBrakeController : IDisposable
 
         PublishSnapshot();
     }
+
+    private string? FocusedMonitorStableId(IReadOnlyList<MonitorDescriptor> monitors)
+    {
+        if (!Settings.FocusDimming.Enabled)
+        {
+            return null;
+        }
+
+        try
+        {
+            var focusedMonitorStableId = _focusedMonitorProvider.FocusedMonitorStableId(monitors);
+            return monitors.Any(monitor => string.Equals(monitor.StableId, focusedMonitorStableId, StringComparison.OrdinalIgnoreCase))
+                ? focusedMonitorStableId
+                : null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static bool AppliesFocusDimming(
+        MonitorDescriptor monitor,
+        string? focusedMonitorStableId,
+        FocusDimmingOptions options) =>
+        options.Enabled &&
+        options.Opacity > 0 &&
+        !string.IsNullOrWhiteSpace(focusedMonitorStableId) &&
+        !string.Equals(monitor.StableId, focusedMonitorStableId, StringComparison.OrdinalIgnoreCase);
 
     private static InactiveMonitorEvent? ObserveInactiveMonitor(MonitorPipeline pipeline, FrameAnalysisResult analysis)
     {
@@ -468,5 +517,12 @@ public sealed class LumaBrakeController : IDisposable
         public int LastRegionalMaskCount { get; set; }
 
         public double LastRegionalMaskMaxOpacity { get; set; }
+    }
+
+    private sealed class NoFocusedMonitorProvider : IFocusedMonitorProvider
+    {
+        public static readonly NoFocusedMonitorProvider Instance = new();
+
+        public string? FocusedMonitorStableId(IReadOnlyList<MonitorDescriptor> monitors) => null;
     }
 }

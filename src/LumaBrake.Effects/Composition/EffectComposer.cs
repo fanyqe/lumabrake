@@ -65,7 +65,8 @@ public sealed class EffectComposer
         EffectReason.StaticShade => 3,
         EffectReason.InactiveMonitor => 4,
         EffectReason.AdaptiveContent => 5,
-        EffectReason.Scheduled => 6,
+        EffectReason.FocusDimming => 6,
+        EffectReason.Scheduled => 7,
         _ => 99
     };
 }
