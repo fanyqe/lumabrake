@@ -66,5 +66,5 @@
 - Multi-monitor SDR support.
 - Safe Mode.
 - Diagnostics export.
-- CI release artifacts.
+- CI release artifacts, checksum, and SBOM.
 - Accurate documentation of limitations.
