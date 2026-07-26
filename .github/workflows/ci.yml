@@ -35,29 +35,7 @@ jobs:
         shell: pwsh
         run: |
           $artifactRoot = Join-Path $PWD "artifacts"
-          $portableRoot = Join-Path $artifactRoot "portable\LumaBrake-win-x64"
-          New-Item -ItemType Directory -Force $portableRoot | Out-Null
-
-          dotnet publish src\LumaBrake.App\LumaBrake.App.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            --output $portableRoot
-
-          dotnet publish src\LumaBrake.Cli\LumaBrake.Cli.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            --output $portableRoot
-
-          Copy-Item README.md, LICENSE, PRIVACY.md, SECURITY.md -Destination $portableRoot
-
-          $zipPath = Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip"
-          Compress-Archive -Path (Join-Path $portableRoot "*") -DestinationPath $zipPath -Force
-
-          $hash = Get-FileHash $zipPath -Algorithm SHA256
-          "$($hash.Hash)  LumaBrake-win-x64-portable.zip" |
-            Set-Content (Join-Path $artifactRoot "LumaBrake-win-x64-portable.zip.sha256") -Encoding ascii
+          .\scripts\package-portable.ps1 -ArtifactRoot $artifactRoot -SelfContained $true
 
       - name: Generate SBOM
         shell: pwsh
