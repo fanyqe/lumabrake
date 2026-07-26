@@ -41,13 +41,13 @@ jobs:
           dotnet publish src\LumaBrake.App\LumaBrake.App.csproj `
             --configuration Release `
             --runtime win-x64 `
-            --self-contained false `
+            --self-contained true `
             --output $portableRoot
 
           dotnet publish src\LumaBrake.Cli\LumaBrake.Cli.csproj `
             --configuration Release `
             --runtime win-x64 `
-            --self-contained false `
+            --self-contained true `
             --output $portableRoot
 
           Copy-Item README.md, LICENSE, PRIVACY.md, SECURITY.md -Destination $portableRoot
